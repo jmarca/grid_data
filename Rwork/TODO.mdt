@@ -4,4 +4,10 @@
 
 2. download Hadley Wickham's stuff for creating packages
 
-3. 
+# Have done
+
+can load grid JSON file into a dataframe
+
+# Need
+
+combine geom with JSON grid file

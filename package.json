@@ -1,0 +1,26 @@
+{
+  "name": "grid_data",
+  "version": "0.0.1",
+  "description": "manage the CARB grid data ",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+    "dependencies": {
+        "lodash": "~0.7.0"
+    },
+    "devDependencies": {
+        "should": "",
+        "async": ""
+    },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jmarca/grid_data"
+  },
+  "author": "James E. Marca",
+  "license": "BSD",
+  "readmeFilename": "README.md"
+}

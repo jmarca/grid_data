@@ -7,7 +7,7 @@ var _ = require('lodash')
 var fs = require('fs')
 var grid_topology = require('../lib/grid_topology').grid_topology
 var request = require('request')
-
+var topojson = require('topojson')
 
 var env = process.env;
 var cuser = env.COUCHDB_USER ;
@@ -20,7 +20,7 @@ var phost = process.env.PSQL_TEST_HOST || '127.0.0.1'
 var pport = process.env.PSQL_PORT || 5432
 
 
-var test_db ='carb%2fgrid%2fstate4k'
+var test_db ='test%2fcarb%2fgrid%2ftopology'
 var options ={'chost':chost
              ,'cport':cport
              ,'cusername':cuser
@@ -75,10 +75,10 @@ describe('couch_file',function(){
 
     it('should save something to couchdb'
       ,function(done){
-           var task={i0:0
-                    ,i1:500
-                    ,j0:0
-                    ,j1:500
+           var task={i0:140
+                    ,i1:160
+                    ,j0:150
+                    ,j1:200
                     ,options:options}
 
            grid_topology(task
@@ -86,12 +86,33 @@ describe('couch_file',function(){
                              // err should not exist
                              should.not.exist(err)
                              should.exist(cbtask)
-                             console.log(cbtask)
+                             // check with couchdb, make sure that what you get is a topology
+                             var couch = 'http://'+chost+':'+cport+'/'+test_db
+
+
+                             var uris = [couch +'/topology4326',couch +'/topology']
+                             async.each(uris
+                                       ,function(uri,cb){
+                                            request.get(uri
+                                                       ,function(e,r,b){
+                                                            if(e) return cb(e)
+                                                            // b should be a topology object
+                                                            should.exist(b)
+                                                            var c = JSON.parse(b)
+                                                            should.exist(c)
+                                                            c.should.have.property('type','Topology')
+                                                            c.should.have.property('objects')
+                                                            c.objects[0].should.have.property('type')
+                                                            c.objects[0].should.have.property('id')
+                                                            c.should.have.property('arcs')
+                                                            c.arcs.should.have.length
+                                                            (c.args.length).should.be.above(0)
+                                                            return cb(null)
+                                                        })
+                                        })
+
                              done()
                          })
        })
-    it('should combine topologies'
-      ,function(){
 
-       })
 })

@@ -104,6 +104,7 @@ describe('couch_file',function(){
                                                             c.should.have.property('objects')
                                                             c.objects[0].should.have.property('type')
                                                             c.objects[0].should.have.property('id')
+                                                            c.objects[0].id.should.match(/^\d+_\d+$/)
                                                             c.should.have.property('arcs')
                                                             c.arcs.should.have.length
                                                             (c.args.length).should.be.above(0)

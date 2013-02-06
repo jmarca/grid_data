@@ -56,7 +56,7 @@ describe('couch_file',function(){
         if(!created_locally) return done()
 
         // bail in development
-        return done()
+        // return done()
         console.log('deleting temporary couchdb')
         var couch = 'http://'+chost+':'+cport+'/'+test_db
         var opts = {'uri':couch
@@ -91,28 +91,36 @@ describe('couch_file',function(){
 
 
                              var uris = [couch +'/topology4326',couch +'/topology']
-                             async.each(uris
-                                       ,function(uri,cb){
-                                            request.get(uri
-                                                       ,function(e,r,b){
-                                                            if(e) return cb(e)
-                                                            // b should be a topology object
-                                                            should.exist(b)
-                                                            var c = JSON.parse(b)
-                                                            should.exist(c)
-                                                            c.should.have.property('type','Topology')
-                                                            c.should.have.property('objects')
-                                                            c.objects[0].should.have.property('type')
-                                                            c.objects[0].should.have.property('id')
-                                                            c.objects[0].id.should.match(/^\d+_\d+$/)
-                                                            c.should.have.property('arcs')
-                                                            c.arcs.should.have.length
-                                                            (c.args.length).should.be.above(0)
-                                                            return cb(null)
-                                                        })
-                                        })
+                             async.forEach(uris
+                                          ,function(uri,cb){
+                                               request.get(uri
+                                                          ,function(e,r,b){
+                                                               if(e) return cb(e)
+                                                               // b should be a topology object
+                                                               should.exist(b)
+                                                               var c = JSON.parse(b)
+                                                               should.exist(c)
+                                                               c.should.have.property('type','Topology')
+                                                               c.should.have.property('objects')
+                                                               var topo_objects = c.objects
+                                                               _.each(topo_objects
+                                                                     ,function(obj){
+                                                                          obj.should.have.property('type')
+                                                                          obj.should.have.property('id')
+                                                                          obj.id.should.match(/^\d+_\d+$/)
 
-                             done()
+                                                                      })
+                                                               c.should.have.property('arcs')
+                                                               c.arcs.should.have.property('length')
+                                                               c.arcs.length.should.be.above(0)
+                                                               console.log('arcs.length is '+c.arcs.length)
+                                                               return cb(null)
+                                                           })
+                                           }
+                                          ,done)
+
+                             return null
+
                          })
        })
 

@@ -21,7 +21,7 @@ var options ={'host':phost
              }
 
 describe('grab_geom',function(){
-    it('should properly compute aadt from month file'
+    it('should get the right grid cell geometry, given a grid file name'
       ,function(done){
            var task={file:'./test/files/monthly/2009/100/263.json'
                     ,options:options}

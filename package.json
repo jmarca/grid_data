@@ -10,7 +10,8 @@
         "lodash": "~0.7.0",
         "pg":"",
         "request":"",
-"topojson":""
+        "topojson":"",
+        "optimist":""
     },
     "devDependencies": {
         "should": "",

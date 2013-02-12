@@ -33,9 +33,23 @@ describe('read_file',function(){
                                          ,function(err,text){
                                               should.not.exist(err)
                                               should.exist(text)
-                                              task.data.should.equal(JSON.parse(text))
+                                              task.data.should.eql(JSON.parse(text))
                                           })
 
+                              done()
+                          })
+            })
+    it('should read a file that exists but has no features, and return an error task'
+           ,function(done){
+                var task={file:'./test/files/hourly/2007/300/250.json'}
+
+                read_file(task
+                         ,function(err,cbtask){
+                              // file should not exist
+                              // file should not exist
+                              should.exist(err)
+                              should.not.exist(cbtask)
+                              err.should.eql(task)
                               done()
                           })
             })

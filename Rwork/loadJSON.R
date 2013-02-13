@@ -22,6 +22,7 @@ parseGridRecord <- function(rawjson){
   df[,3:16] <- apply(df[,3:16],2,as.numeric)
   df[,2] <- as.factor(df[,2])
   df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
+  df$tsct <- as.POSIXct(df$ts2)
   df
 }
 

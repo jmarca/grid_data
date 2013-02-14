@@ -578,9 +578,23 @@ names(pred.sites)
 names(pred.sites) <- c("s.idx" ,  "Longitude", "Latitude" )
 names(pred.sites)
 df.pred <- merge(dat.mrg,pred.sites,by=c("s.idx"),all.x=TRUE)
-    grid.coords<-unique(cbind(dat.pred$Longitude,dat.pred$Latitude))
-    grid.coords<-unique(cbind(df.pred$Longitude,df.pred$Latitude))
+grid.coords<-unique(cbind(dat.pred$Longitude,dat.pred$Latitude))
+grid.coords<-unique(cbind(df.pred$Longitude,df.pred$Latitude))
 dim(grid.coords)
 grid.pred<-predict(post.gp.fit,newcoords=grid.coords,newdata=df.pred)
 q()
 y
+problem.sites <-  sort(unique(c(45,46,54,55,56,57,64,65,66,67,75,76,35,36,44,45,46,47,54,55,56,57,65,66,25,26,34,35,36,37,44,45,46,47,55,56)))
+## 25 26 34 35 36 37 44 45 46 47 54 55 56 57 64 65 66 67 75 76
+filter <- is.element(df.pred$s.idx,problem.sites)
+df.pred <- df.pred[!filter,]
+## still fails
+current.sites <- sort(unique(df.pred$s.idx))
+more.drop <- rep(1)
+
+
+keep.sites <- current.sites[seq(from=1,to=length(current.sites),by=4)]
+filter <- is.element(df.pred$s.idx,keep.sites)
+df.pred <- df.pred[filter,]
+grid.coords<-unique(cbind(df.pred$Longitude,df.pred$Latitude))
+grid.pred<-predict(post.gp.fit,newcoords=grid.coords,newdata=df.pred)

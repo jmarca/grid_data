@@ -11,3 +11,15 @@ can load grid JSON file into a dataframe
 # Need
 
 combine geom with JSON grid file
+
+topojson is out, need to get geometry from postgis
+
+need to pull hourly json, pull aadt file, merge, preserve i_cell, j_cell, get geom
+
+have generating merged docs from all detectors, etc
+have running model
+have predicting missing areas, sort of.  Can do about 10 or so grid cells max
+
+Need a way to store hourly fraction estimates
+
+link up remaining hpms sites with county locality to a city shape

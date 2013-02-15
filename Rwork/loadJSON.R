@@ -25,5 +25,20 @@ parseGridRecord <- function(rawjson){
   df$tsct <- as.POSIXct(df$ts2)
   df
 }
+parseAADTRecord <- function(rawjson){
+  ## just a doc, make it a df
+  dfaadt <- data.frame(i_cell = rawjson$i_cell,
+                   j_cell = rawjson$j_cell,
+                   aadt.n = 0,
+                   aadt.hh = 0,
+                   aadt.nhh = 0
+                   )
+  ## sum these up
+  l_ply(rawjson$aadt,.fun=function(x){
+    dfaadt$aadt.n <<- dfaadt$aadt.n + x$n[1]
+    dfaadt$aadt.hh <<-dfaadt$aadt.hh + x$hh[1]
+    dfaadt$aadt.nhh <<- dfaadt$aadt.nhh + x$not_hh[1]
+  })
+  dfaadt
+}
 
-%% ready to process 

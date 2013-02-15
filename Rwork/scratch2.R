@@ -433,8 +433,7 @@ ts.un <- sort(unique(ts.u[,1]))
 dat.mrg <- matrix(NA,length(ts.un)*3,5)
 N <- length(ts.un)
 n <- 3
-dat.mrg[,1] <- sort(rep(1:n,N)
-)
+dat.mrg[,1] <- sort(rep(1:n,N))
 summary(dat.mrg)
 dat.mrg[,2] <- rep(ts.un$year,n)
 ts.un[1]
@@ -493,6 +492,9 @@ dat.mrg[1:10,]
   df.129.160$tsct <- as.POSIXct(df.129.160$ts2)
   df.130.160$tsct <- as.POSIXct(df.130.160$ts2)
   df.131.160$tsct <- as.POSIXct(df.131.160$ts2)
+
+df.bind$tsct <- as.POSIXct(df.bind$ts2)
+
 dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct')
 df.mrg <-  as.data.frame(dat.mrg)
 ?merge

@@ -1,3 +1,5 @@
+source('./fetchFiles.R')
+
 ## get all the grids in a county
 library('cclust')
 
@@ -54,7 +56,7 @@ grid.query <- paste(grid.with
 }
 
 cluster.grids <- function(df.grid){
-  cl.df.grid<-cclust(as.matrix(df.grid[,c('lon','lat')]),3,20,verbose=TRUE,method="kmeans")
+  
   cl.df.grid
 }
   
@@ -62,20 +64,23 @@ process.grids <- function(df.grid){
   
 }
 
-df.grid <- get.grids.with.detectors('SAN JOAQUIN VALLEY')
-cl <- cluster.grids(df.grid)
-n <- cl$ncenters
-for(i=1;i<=n;i++){
-  idx <- cl$cluster==i
-  ## are we doing daily, monthly, what?  what canthe computer handle?
-  ## start with monthly, go from there
-  year=2009
-  for(month=0;month<12;month++){
-    ## data.fetch has to get data for all the grid cells, by month, year
-    df.data <- data.fetch(df.grid[idx,],month=month,year=year)
-    ## data.pred will model the data, and then predict median fraction
-    ## for passed in hpms grids
-    df.pred <- data.pred(df.data,hpms.grids)
+
+runme <- function(){
+  df.grid <- get.grids.with.detectors('SAN JOAQUIN VALLEY')
+  cl <- cl.df.grid<-cclust(as.matrix(df.grid[,c('lon','lat')]),5,20,verbose=TRUE,method="kmeans")
+  n <- cl$ncenters
+  for(i in 1:n){
+    idx <- cl$cluster==i
+    ## are we doing daily, monthly, what?  what canthe computer handle?
+    ## start with monthly, go from there
+    year <- 2007
+    for(month in 1:12){
+      ## data.fetch has to get data for all the grid cells, by month, year
+      df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=FALSE)
+      df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=FALSE)
+      ## data.pred will model the data, and then predict median fraction
+      ## for passed in hpms grids
+      post.gp.fit <- data.model(df.data)
+    }
   }
-  
 }

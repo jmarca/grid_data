@@ -82,12 +82,12 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   print('do posix')
   ts.psx <<- as.POSIXct(ts.un)
   print('done posix')
-  site.index <- sort(unique(df.bind$s.idx))
+  ## site.index <- sort(unique(df.bind$s.idx))
   site.lat.lon <- ddply(df.bind,"s.idx",function(x){ 
      x[1,c("s.idx","Latitude","Longitude")]
   })
   n <- length(ts.un)
-  N <- length(site.index)
+  N <- length(site.lat.lon[,1])
   dat.mrg <- matrix(NA,n*N,8)
   dat.mrg[,1] <- sort(rep(site.lat.lon$s.idx,each=n)) ## site number
   dat.mrg[,2] <- rep(ts.un$year,N)+1900
@@ -99,7 +99,10 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   dat.mrg[,8] <- sort(rep(site.lat.lon$Latitude,each=n)) ## lat
   dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
   df.mrg <- as.data.frame(dat.mrg)
-  df.mrg <- merge(df.mrg,df.bind,all=TRUE,by=c("s.idx","tsct","Latitude","Longitude"))
+  df.bind$Longitude <- NULL
+  df.bind$Latitude <- NULL
+  df.mrg <- merge(df.mrg,df.bind,all=TRUE,by=c("s.idx","tsct"))
+  
   frac.filter <- !(df.mrg$aadt.n == 0 | is.na(df.mrg$aadt.n))
   df.mrg$aadt.fraction <- NA
   df.mrg$aadt.fraction[frac.filter] = df.mrg$n[frac.filter] / df.mrg$aadt.n[frac.filter] 

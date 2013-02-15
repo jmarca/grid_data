@@ -129,13 +129,11 @@ data.predict <- function(model,df.pred.grid,ts.un){
   dat.mrg[,4] <- rep(ts.un$mday,n.sites)
   dat.mrg[,5] <- rep(ts.un$hour,n.sites)
   dat.mrg[,6] <- rep(ts.psx,n.sites)
-  dat.mrg[,7] <- sort(rep(df.pred.grid$Longitude,each=n.times)) ## lon
-  dat.mrg[,8] <- sort(rep(df.pred.grid$Latitude,each=n.times))  ## lat
+  dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
+  dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
   dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
   df.mrg <- as.data.frame(dat.mrg)
   df.mrg$aadt.fraction <- NA
-  df.pred.grid$Longitude <- NULL
-  df.pred.grid$Latitude <- NULL
   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
   grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg)

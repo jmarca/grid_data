@@ -123,7 +123,7 @@ runme <- function(){
       sim.set <- sample(picker,5)
       df.pred.grid <- hpms.subset[sim.set,]
       ts.un <- sort(unique(df.data$ts2))
-      grid.pred <-  data.predict(post.gp.fit,sim.set,ts.un)
+      grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
       
     }
   }

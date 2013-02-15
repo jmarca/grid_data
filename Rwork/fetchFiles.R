@@ -109,10 +109,36 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   df.mrg
 }
 
-data.model=function(df.mrg){
+data.model <- function(df.mrg){
   
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
   post.gp.fit <- spT.Gibbs(formula=aadt.fraction~1,data=df.mrg,model="GP",coords=site.coords,distance.method="geodetic:km",report=10,scale.transform="SQRT")
   post.gp.fit
+  
+}
+
+data.predict <- function(model,df.pred.grid,ts.un){
+  n.sites <- length(df.pred.grid[,1])
+  df.pred.grid$s.idx <- 1:n.sites
+
+  n.times <- length(ts.un)
+  dat.mrg <- matrix(NA,n.sites*n.times,8)
+  dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
+  dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
+  dat.mrg[,3] <- rep(ts.un$mon,n.sites)
+  dat.mrg[,4] <- rep(ts.un$mday,n.sites)
+  dat.mrg[,5] <- rep(ts.un$hour,n.sites)
+  dat.mrg[,6] <- rep(ts.psx,n.sites)
+  dat.mrg[,7] <- sort(rep(df.pred.grid$Longitude,each=n.times)) ## lon
+  dat.mrg[,8] <- sort(rep(df.pred.grid$Latitude,each=n.times))  ## lat
+  dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+  df.mrg <- as.data.frame(dat.mrg)
+  df.mrg$aadt.fraction <- NA
+  df.pred.grid$Longitude <- NULL
+  df.pred.grid$Latitude <- NULL
+  df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
+  grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg)
+
   
 }

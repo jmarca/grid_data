@@ -40,7 +40,7 @@ from carbgrid.state4k grids ,
 public.carb_airbasins_aligned_03 basins
 where basin_name='SAN JOAQUIN VALLEY' and grids.geom4326 && basins.geom_4326)
 
--- select grid cells with hpm records in them
+-- select grid cells with vds, wim detectors
 select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat
 from basingrids
     join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)

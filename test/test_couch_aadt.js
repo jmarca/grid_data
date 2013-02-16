@@ -127,20 +127,13 @@ describe('couch_aadt',function(){
                                               var couch = 'http://'+chost+':'+cport+'/'+test_db
 
 
-                                              var uris = [couch +'/header',couch +'/_all_docs?'+['include_docs=true'
-                                                                                                ,'startkey=%22'+[100,263,'2009-01-02%2012:00'].join('_')+'%22'
-                                                                                                ,'endkey=%22'+[100,263,'2009-03-02%2012:00'].join('_')+'%22'].join('&')]
-                                              async.forEach(uris
-                                                           ,function(uri,cb){
-                                                                request.get(uri
-                                                                           ,function(e,r,b){
-                                                                                if(e) return cb(e)
-                                                                                // b should be a topology object
-                                                                                should.exist(b)
-                                                                                var c = JSON.parse(b)
-                                                                                should.exist(c)
-                                                                                if(c.rows !== undefined){
-                                                                                    _.each(c.rows
+                                              var uri = couch +'/100_263_2009_aadt'
+                                              request.get(uri
+                                                         ,function(e,r,b){
+                                                              if(e) return cb(e)
+                                                              should.exist(b)
+                                                              var c = JSON.parse(b)
+                                                              should.exist(c)
                                                                                           ,function(row){
                                                                                                row.should.have.property('key')
                                                                                                row.should.have.property('value')

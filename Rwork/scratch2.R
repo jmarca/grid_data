@@ -662,7 +662,7 @@ for (hour in 1:100) {
 
 ani.pause()
 }
-}, img.name = "norm_plot", single.opts = "’utf8’: false", autoplay = FALSE, interval = 0.5,
+}, img.name = "norm_plot", single.opts = "utf8: false", autoplay = FALSE, interval = 0.5,
 imgdir = "norm_dir", htmlfile = "100hrs.html", ani.height = 400, ani.width = 600,
 title = "Demo of 100 hours of simulated AADT fraction", description = c("When you write a long long long long description,",
 "R will try to wrap the words automatically.", "Oh, really?!"))

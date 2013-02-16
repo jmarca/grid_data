@@ -121,51 +121,36 @@ describe('couch_aadt',function(){
                               task.aadt = result.aadt.aadt
                               // all set to set couch saving
                               couch_aadt(task
-                                         ,function(err,cbtask){
-                                              should.not.exist(err)
-                                              // check with couchdb, make sure that what you get is a topology
-                                              var couch = 'http://'+chost+':'+cport+'/'+test_db
-
-
-                                              var uri = couch +'/100_263_2009_aadt'
-                                              request.get(uri
-                                                         ,function(e,r,b){
-                                                              if(e) return cb(e)
-                                                              should.exist(b)
-                                                              var c = JSON.parse(b)
-                                                              should.exist(c)
-                                                                                          ,function(row){
-                                                                                               row.should.have.property('key')
-                                                                                               row.should.have.property('value')
-                                                                                               row.should.have.property('doc')
-
-                                                                                               var doc=row.doc
-                                                                                               doc.should.have.property('geom_id')
-                                                                                               doc.should.have.property('aadt')
-                                                                                               doc.should.have.property('i_cell')
-                                                                                               doc.should.have.property('j_cell')
-                                                                                               doc.data.should.have.property('length')
-                                                                                               doc.aadt.should.have.property('101')
-                                                                                               doc.aadt['101'].should.have.property('n')
-                                                                                               var rounded = Math.floor(10000 * doc.aadt['101'].n)
-                                                                                               rounded.should.eql( Math.floor(1151483024.58 /365 * 10000))
-                                                                                               doc.aadt['101'].should.have.property('hh')
-                                                                                               rounded = Math.floor(10000 * doc.aadt['101'].hh)
-                                                                                               rounded.should.eql( Math.floor( 10713955.44   /365 * 10000))
-                                                                                               doc.aadt['101'].should.have.property('not_hh')
-                                                                                               rounded = Math.floor(10000 * doc.aadt['101'].not_hh)
-                                                                                               rounded.should.eql( Math.floor(11791466.6/365 *10000))
-                                                                                           })
-                                                                                }
-                                                                                return cb(null)
-                                                                            })
-                                                            }
-                                                           ,done)
-
-                                              return null
-
-
-                                          })
+                                        ,function(err,cbtask){
+                                             should.not.exist(err)
+                                             // check with couchdb, make sure that what you get is a topology
+                                             var couch = 'http://'+chost+':'+cport+'/'+test_db
+                                             var uri = couch +'/100_263_2009_aadt'
+                                             request.get(uri
+                                                        ,function(e,r,b){
+                                                             if(e) return done(e)
+                                                             should.exist(b)
+                                                             var doc = JSON.parse(b)
+                                                             should.exist(doc)
+                                                             doc.should.have.property('geom_id')
+                                                             doc.should.have.property('aadt')
+                                                             doc.should.have.property('i_cell')
+                                                             doc.should.have.property('j_cell')
+                                                             doc.data.should.have.property('length')
+                                                             doc.aadt.should.have.property('101')
+                                                             doc.aadt['101'].should.have.property('n')
+                                                             var rounded = Math.floor(10000 * doc.aadt['101'].n)
+                                                             rounded.should.eql( Math.floor(1151483024.58 /365 * 10000))
+                                                             doc.aadt['101'].should.have.property('hh')
+                                                             rounded = Math.floor(10000 * doc.aadt['101'].hh)
+                                                             rounded.should.eql( Math.floor( 10713955.44   /365 * 10000))
+                                                             doc.aadt['101'].should.have.property('not_hh')
+                                                             rounded = Math.floor(10000 * doc.aadt['101'].not_hh)
+                                                             rounded.should.eql( Math.floor(11791466.6/365 *10000))
+                                                             return done(null)
+                                                         });
+                                             return null
+                                         })
                           })
        })
 })

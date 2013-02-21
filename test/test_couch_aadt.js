@@ -50,6 +50,7 @@ describe('couch_aadt',function(){
                ,function(e,r,b){
                     if(e) return done(e)
                     created_locally=true
+                    console.log('created '+couch)
                     return done()
                 })
         return null
@@ -57,8 +58,8 @@ describe('couch_aadt',function(){
     after(function(done){
         if(!created_locally) return done()
 
-        // bail in development
-        //return done()
+        // uncomment to bail in development
+        // return done()
         console.log('deleting temporary couchdb')
         var couch = 'http://'+chost+':'+cport+'/'+test_db
         var opts = {'uri':couch
@@ -78,7 +79,8 @@ describe('couch_aadt',function(){
     it('should save something to couchdb'
       ,function(done){
            var task={file:'./test/files/hourly/2009/100/263.json'
-                    ,options:options}
+                    ,options:options
+                    ,year:2009}
            async.parallel({grid:function(cb){
                                grab_geom(task
                                         ,function(err,cbtask){
@@ -132,11 +134,12 @@ describe('couch_aadt',function(){
                                                              should.exist(b)
                                                              var doc = JSON.parse(b)
                                                              should.exist(doc)
+                                                             console.log(doc)
                                                              doc.should.have.property('geom_id')
                                                              doc.should.have.property('aadt')
                                                              doc.should.have.property('i_cell')
                                                              doc.should.have.property('j_cell')
-                                                             doc.data.should.have.property('length')
+                                                             doc.should.have.property('aadt')
                                                              doc.aadt.should.have.property('101')
                                                              doc.aadt['101'].should.have.property('n')
                                                              var rounded = Math.floor(10000 * doc.aadt['101'].n)

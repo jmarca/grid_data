@@ -57,10 +57,11 @@ describe('couch_file',function(){
     after(function(done){
         if(!created_locally) return done()
 
+        var couch = 'http://'+chost+':'+cport+'/'+test_db
         // bail in development
+        //console.log(couch)
         //return done()
         console.log('deleting temporary couchdb')
-        var couch = 'http://'+chost+':'+cport+'/'+test_db
         var opts = {'uri':couch
                    ,'method': "DELETE"
                    ,'headers': {}
@@ -78,19 +79,23 @@ describe('couch_file',function(){
     it('should save something to couchdb'
       ,function(done){
            var task={file:'./test/files/hourly/2009/100/263.json'
+                    ,'year':2009
+                    ,'i':100
+                    ,'j':263
                     ,options:options}
-           async.parallel({grid:function(cb){
-                               grab_geom(task
-                                        ,function(err,cbtask){
-                                             // err should not exist
-                                             should.not.exist(err)
-                                             should.exist(cbtask)
-                                             cbtask.should.have.property('grid')
-                                             cbtask.grid.should.have.property('i_cell',100)
-                                             cbtask.grid.should.have.property('j_cell',263)
-                                             cb(null,cbtask)
-                                         })}
-                          ,aadt:function(cb){
+           async.parallel({// grid:function(cb){
+                          //      grab_geom(task
+                          //               ,function(err,cbtask){
+                          //                    // err should not exist
+                          //                    should.not.exist(err)
+                          //                    should.exist(cbtask)
+                          //                    cbtask.should.have.property('grid')
+                          //                    cbtask.grid.should.have.property('i_cell',100)
+                          //                    cbtask.grid.should.have.property('j_cell',263)
+                          //                    cb(null,cbtask)
+                          //                })}
+                          // ,
+                           aadt:function(cb){
                                fs.readFile(task.file
                                           ,function(err,text){
                                                should.not.exist(err)
@@ -117,7 +122,7 @@ describe('couch_file',function(){
                                            })
                            }}
                          ,function(err,result){
-                              task.grid = result.grid.grid
+                              //task.grid = result.grid.grid
                               task.aadt = result.aadt.aadt
                               // all set to set couch saving
                               couch_file(task
@@ -127,38 +132,62 @@ describe('couch_file',function(){
                                               var couch = 'http://'+chost+':'+cport+'/'+test_db
 
 
-                                              var uris = [couch +'/header',couch +'/_all_docs?'+['include_docs=true'
-                                                                                                ,'startkey=%22'+[100,263,'2009-01-02%2012:00'].join('_')+'%22'
-                                                                                                ,'endkey=%22'+[100,263,'2009-03-02%2012:00'].join('_')+'%22'].join('&')]
-                                              async.forEach(uris
-                                                           ,function(uri,cb){
-                                                                request.get(uri
-                                                                           ,function(e,r,b){
-                                                                                if(e) return cb(e)
-                                                                                // b should be a topology object
-                                                                                should.exist(b)
-                                                                                var c = JSON.parse(b)
-                                                                                should.exist(c)
-                                                                                if(c.rows !== undefined){
-                                                                                    _.each(c.rows
-                                                                                          ,function(row){
-                                                                                               row.should.have.property('key')
-                                                                                               row.should.have.property('value')
-                                                                                               row.should.have.property('doc')
+                                              var uri1 = couch +'/header'
 
-                                                                                               var doc=row.doc
-                                                                                               doc.should.have.property('geom_id')
-                                                                                               doc.should.have.property('data')
-                                                                                               doc.data.should.have.property('length')
-                                                                                               doc.data.length.should.be.above(0)
-                                                                                               doc.should.have.property('i_cell')
-                                                                                               doc.should.have.property('j_cell')
-                                                                                           })
-                                                                                }
-                                                                                return cb(null)
-                                                                            })
-                                                            }
-                                                           ,done)
+                                              var uri2 = couch +'/_all_docs?'+['include_docs=true'
+                                                                                                ,'startkey=%22'+[100,263,'2009-01-02%2012:00'].join('_')+'%22'
+                                                                              ,'endkey=%22'+[100,263,'2009-03-02%2012:00'].join('_')+'%22'].join('&')
+                                              async.parallel([function(cb){
+                                                                  request.get(uri1
+                                                                             ,function(e,r,b){
+                                                                                  if(e) return cb(e)
+                                                                                  // b should be a topology object
+                                                                                  should.exist(b)
+                                                                                  var c = JSON.parse(b)
+                                                                                  should.exist(c)
+                                                                                  c.should.have.property('header')
+                                                                                  c.should.have.property('unmapper')
+                                                                                  return cb()
+                                                                              })}
+                                                             ,function(cb){
+                                                                  request.get(uri2
+                                                                             ,function(e,r,b){
+                                                                                  if(e) return cb(e)
+                                                                                  // b should be a topology object
+                                                                                  should.exist(b)
+                                                                                  var c = JSON.parse(b)
+                                                                                  should.exist(c)
+                                                                                  c.rows.length.should.be.above(1)
+                                                                                  if(c.rows !== undefined){
+                                                                                      _.each(c.rows
+                                                                                            ,function(row){
+                                                                                                 row.should.have.property('key')
+                                                                                                 row.should.have.property('value')
+                                                                                                 row.should.have.property('doc')
+
+                                                                                                 var doc=row.doc
+                                                                                                 doc.should.have.property('geom_id')
+                                                                                                 doc.should.have.property('data')
+                                                                                                 doc.data.should.have.property('length')
+                                                                                                 doc.data.length.should.be.above(0)
+                                                                                                 doc.should.have.property('i_cell')
+                                                                                                 doc.should.have.property('j_cell')
+                                                                                                 doc.should.have.property('aadt_frac')
+                                                                                                 doc.aadt_frac.should.have.property('n')
+                                                                                                 var roundn = Math.floor(10000*Math.floor(doc.data[2]*10000)/Math.floor(1151483024.58 /365 * 10000))
+                                                                                                 roundn.should.eql(Math.floor(doc.aadt_frac.n*10000))
+                                                                                                 doc.aadt_frac.should.have.property('hh')
+                                                                                                 var roundhh = Math.floor(10000*Math.floor(doc.data[3]*10000)/Math.floor(10713955.44   /365 * 10000))
+                                                                                                 roundhh.should.eql(Math.floor(doc.aadt_frac.hh*10000))
+                                                                                                 doc.aadt_frac.should.have.property('not_hh')
+                                                                                                 var roundnothh = Math.floor(10000*Math.floor(doc.data[4]*10000)/Math.floor(11791466.6/365 * 10000))
+                                                                                                 roundnothh.should.eql(Math.floor(doc.aadt_frac.not_hh*10000))
+                                                                                             })
+                                                                                  }
+                                                                                  return cb()
+                                                                              })
+                                                              }]
+                                                            ,done)
 
                                               return null
 

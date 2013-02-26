@@ -33,7 +33,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
   return(json)
 }
 
-get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
+get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
   ## make a start and end date

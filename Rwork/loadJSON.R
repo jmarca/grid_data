@@ -42,3 +42,18 @@ parseAADTRecord <- function(rawjson){
   dfaadt
 }
 
+
+parseGridFile <- function(jsonfile){
+  ## get it
+  rawjson <- fromJSON(jsonfile,simplify=FALSE)
+  ## trim it down
+  rows <- rawjson$features[[1]]$properties$data
+  df <- ldply(rows,.fun=function(x){unlist(x)[1:16]})
+  names(df) <- default.header[1:16]
+  df[,3:16] <- apply(df[,3:16],2,as.numeric)
+  df[,2] <- as.factor(df[,2])
+  df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
+  df$tsct <- as.POSIXct(df$ts2)
+  df
+}
+

@@ -128,8 +128,9 @@ function create_couch_entries(done){
                                     })
                     }}
                   ,function(err,result){
+                       console.log('aadt done')
                        //task.grid = result.grid.grid
-                       task.aadt = result.aadt.aadt
+                       task = result.aadt
                        // all set to set couch saving
                        couch_file(task
                                  ,function(err,cbtask){
@@ -231,7 +232,7 @@ function overwrite_couch_entries(origdocs,done){
                                     })
                     }}
                   ,function(err,result){
-                       task.aadt = result.aadt.aadt
+                       task = result.aadt
                        // all set to set couch saving
                        couch_file(task
                                  ,function(err,cbtask){

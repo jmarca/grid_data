@@ -119,11 +119,27 @@ runme <- function(){
       # save(post.gp.fit,df.data,file=filename,compress='xz')
 
       # loop and simulate
-      picker <- 1:length(hpms.subset[,1])
-      sim.set <- sample(picker,5)
-      df.pred.grid <- hpms.subset[sim.set,]
-      ts.un <- sort(unique(df.data$ts2))
-      grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
+      simlim <- length(hpms.subset[,1])
+      picker <- 1:simlim
+      # random order
+      picker <- sample(picker)
+      # just do one at a time for now
+      df.pred.result = data.frame()
+      for(iter in 1:20){ ##simlim
+        sim.set <- picker[iter]
+        df.pred.grid <- hpms.subset[sim.set,]
+        
+        ts.un <- sort(unique(df.data$ts2))
+        n.times = length(ts.un)
+        
+        grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
+        if(dim(df.pred.result)[1]==0){
+          df.pred.result <<- data.frame(grid.pred$Median)
+        }else{
+          df.pred.result <<- cbind(df.pred.result,grid.pred$Median)
+        }
+          names(df.pred.result[iter]) <-sim.set
+      }
       
     }
   }

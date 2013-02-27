@@ -611,6 +611,8 @@ grid.pred<-predict(post.gp.fit,newcoords=grid.coords,newdata=df.pred)
 
 grid.coords<-unique(cbind(df.pred.grid$lon,df.pred.grid$lat))
 site.coords<-unique(cbind(df.data$Longitude,df.data$Latitude))
+grid.coords$type='predict'
+site.coords$type='data'
 union.coords <- unique(rbind(grid.coords,site.coords))
 n.orig.sites = length(unique(df.data$s.idx))
 n.times = length(unique(df.data$tsct))
@@ -650,6 +652,55 @@ saveHTML({
 par(mar = c(4, 4, 0.5, 0.5))
 ani.options(interval = 0.5)
 for (hour in 1:100) {
+  plot(union.coords,xlab="Longitude",ylab="Latitude")
+  surf<-rbind(
+    cbind(site.coords,true.val[hour,]),
+    cbind(grid.coords,grid.val[hour,])
+    )
+  surf<-mba.surf(surf,200,200)$xyz
+  brk<- seq(0.0,0.08,by=(0.08+0)/(100-1))
+  image.plot(surf,breaks=brk,col=tim.colors(99),xlab="Longitude",ylab="Latitude",axes=F,add=TRUE)
+  contour(surf,nlevels=15,lty=3,add=T)
+
+ani.pause()
+}
+}, img.name = "norm_plot", single.opts = "utf8: false", autoplay = FALSE, interval = 0.5,
+imgdir = "norm_dir", htmlfile = "100hrs.html", ani.height = 400, ani.width = 600,
+title = "Demo of 100 hours of simulated AADT fraction", description = c("When you write a long long long long description,",
+"R will try to wrap the words automatically.", "Oh, really?!"))
+
+
+
+
+library(ggplot)
+  
+grid.coords<-unique(cbind(df.pred.grid$lon,df.pred.grid$lat,"predict"))
+site.coords<-unique(cbind(df.data$Longitude,df.data$Latitude,"data"))
+union.coords <- unique(rbind(grid.coords,site.coords))
+##for testing
+hour=8
+  colnames(union.coords) <- c('longitude','latitude','type')
+  union.coords <- data.frame(union.coords)
+  p <- ggplot(union.coords, aes(longitude,latitude))
+  p + geom_point(aes(colour = type))
+
+
+  qplot(union.coords[,1], union.coords[,2], geom = "point", colour = union.coords[,3], alpha = I(0.1))
+  , 
+                               data = subset(bm.data, step <= i), main = paste("step", i)) + 
+              xlim(range(bm.data$x)) + ylim(range(bm.data$x)) + 
+              geom_point(aes(x = x, y = y, facets = ~group, size = I(rep(3, n * grp))), 
+                               data = subset(bm.data, step == i)) + 
+              theme_bw() + opts(legend.position = "none")
+  )
+
+library(animation)
+saveMovie({
+par(mar = c(4, 4, 0.5, 0.5))
+ani.options(interval = 0.5)
+for (hour in 1:100) {
+print(
+
   plot(union.coords,xlab="Longitude",ylab="Latitude")
   surf<-rbind(
     cbind(site.coords,true.val[hour,]),

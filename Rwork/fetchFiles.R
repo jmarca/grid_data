@@ -33,7 +33,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
   return(json)
 }
 
-get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
+get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
   ## make a start and end date
@@ -46,12 +46,6 @@ get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
   df.bind <<- data.frame()
 
   for(i in 1:length(df.grid.subset[,1])){
-    aadt.json <- get.grid.aadt.from.couch(df.grid.subset[i,'i_cell'],
-                                          df.grid.subset[i,'j_cell'],
-                                          year,
-                                          local=local)
-    if('error' %in% names(aadt.json)) next
-    aadt.df <- parseAADTRecord(aadt.json)
     json.data <- get.grid.file.from.couch(df.grid.subset[i,'i_cell'],
                                           df.grid.subset[i,'j_cell'],
                                           start.date,
@@ -67,9 +61,6 @@ get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
     df$j_cell <- df.grid.subset[i,'j_cell']
     df$s.idx <- i
     ## patch aadt onto df
-    df$aadt.n <- aadt.df$aadt.n
-    df$aadt.hh <- aadt.df$aadt.hh
-    df$aadt.nhh <- aadt.df$aadt.nhh
     if(dim(df.bind)[1]==0){
       df.bind <<- df
     }else{
@@ -77,7 +68,7 @@ get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
     }
   }
   ## need time to be uniform for all sites
-  ts.un <<- sort(unique(df.bind$ts2))
+  ts.un <- sort(unique(df.bind$ts2))
   print(summary(ts.un))
   print('do posix')
   ts.psx <<- as.POSIXct(ts.un)
@@ -103,16 +94,13 @@ get.raft.tof.grids <- function(df.grid.subset,year,month,local=TRUE){
   df.bind$Latitude <- NULL
   df.mrg <- merge(df.mrg,df.bind,all=TRUE,by=c("s.idx","tsct"))
   
-  frac.filter <- !(df.mrg$aadt.n == 0 | is.na(df.mrg$aadt.n))
-  df.mrg$aadt.fraction <- NA
-  df.mrg$aadt.fraction[frac.filter] = df.mrg$n[frac.filter] / df.mrg$aadt.n[frac.filter] 
   df.mrg
 }
 
 data.model <- function(df.mrg){
   
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  post.gp.fit <- spT.Gibbs(formula=aadt.fraction~1,data=df.mrg,model="GP",coords=site.coords,distance.method="geodetic:km",report=10,scale.transform="SQRT")
+  post.gp.fit <- spT.Gibbs(formula=n.aadt.frac+hh.aadt.frac+nhh.aadt.frac~1,data=df.mrg,model="GP",coords=site.coords,distance.method="geodetic:km",report=10,scale.transform="SQRT")
   post.gp.fit
   
 }
@@ -133,10 +121,11 @@ data.predict <- function(model,df.pred.grid,ts.un){
   dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
   dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
   df.mrg <- as.data.frame(dat.mrg)
-  df.mrg$aadt.fraction <- NA
+  df.mrg$n.aadt.frac <- NA
+  df.mrg$hh.aadt.frac <- NA
+  df.mrg$hh.aadt.frac <- NA
   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg)
-
-  
+  print(grid.coords)
+  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.05,distance.method="geodetic:km")
 }

@@ -17,9 +17,13 @@ default.header =c("ts","freeway","n","hh","not_hh","o","avg_veh_spd","avg_hh_wei
 parseGridRecord <- function(rawjson){
   ## trim it down
   rows = rawjson$rows
-  df <- ldply(rows,.fun=function(x){unlist(x$doc$data)[1:16]})
-  names(df) <- default.header[1:16]
-  df[,3:16] <- apply(df[,3:16],2,as.numeric)
+  df <- ldply(rows,.fun=function(x){
+    dd <- unlist(x$doc$data)[1:16]
+    daadt <- unlist(x$doc$aadt_frac)
+    c(dd,daadt)
+  })
+  names(df) <- c(default.header[1:16],'n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')
+  df[,3:19] <- apply(df[,3:19],2,as.numeric)
   df[,2] <- as.factor(df[,2])
   df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
   df$tsct <- as.POSIXct(df$ts2)

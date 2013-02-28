@@ -159,7 +159,7 @@ runme <- function(){
       df.all.predictions$ts = sort(unique(df.data$ts))
       df.all.predictions$tsct <- NULL
       rnm = names(df.all.predictions)
-      names(df.all.predicictions) <- gsub('.aadt.frac','',x=rnm)
+      names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
       couch.bulk.docs.save('carb%2Fgrid%2Fstate4k',df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
     }
   }

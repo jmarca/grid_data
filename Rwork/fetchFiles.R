@@ -97,10 +97,10 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   df.mrg
 }
 
-data.model <- function(df.mrg){
+data.model <- function(df.mrg,formula=n.aadt.frac~1){
   
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  post.gp.fit <- spT.Gibbs(formula=n.aadt.frac+hh.aadt.frac+nhh.aadt.frac~1,data=df.mrg,model="GP",coords=site.coords,distance.method="geodetic:km",report=10,scale.transform="SQRT")
+  post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.5,distance.method="geodetic:km",report=10,scale.transform="SQRT")
   post.gp.fit
   
 }
@@ -127,5 +127,5 @@ data.predict <- function(model,df.pred.grid,ts.un){
   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
   print(grid.coords)
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.05,distance.method="geodetic:km")
+  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.5,distance.method="geodetic:km")
 }

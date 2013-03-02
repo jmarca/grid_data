@@ -1,24 +1,15 @@
 # To do list for R coding of data for grid analysis
 
-1. code to read in a JSON doc containing a grid or location's data
+1. fix couch save code
+  1. id generation
+  2. aadt is blank
+  3. code to get _rev, update existing docs
 
 2. download Hadley Wickham's stuff for creating packages
 
 # Have done
 
-can load grid JSON file into a dataframe
-
 # Need
-
-combine geom with JSON grid file
-
-topojson is out, need to get geometry from postgis
-
-need to pull hourly json, pull aadt file, merge, preserve i_cell, j_cell, get geom
-
-have generating merged docs from all detectors, etc
-have running model
-have predicting missing areas, sort of.  Can do about 10 or so grid cells max
 
 Need a way to store hourly fraction estimates
 

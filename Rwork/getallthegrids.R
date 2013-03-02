@@ -125,7 +125,7 @@ runme <- function(){
       picker <- sample(picker)
       # just do one at a time for now
       df.pred.result = data.frame()
-      for(iter in 1:20){ ##simlim
+      for(iter in 1:simlim){
         sim.set <- picker[iter]
         df.pred.grid <- hpms.subset[sim.set,]
         

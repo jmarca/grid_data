@@ -156,7 +156,7 @@ runme <- function(){
       rnm = names(df.all.predictions)
       names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
       ## need to clean up the mess from the bad save, with a view and then a bulk delete
-      couch.bulk.docs.save('carb%2Fgrid%2Fstate4k%2fhpms',all.,local=TRUE,makeJSON=dumpPredictionsToJSON)
+      couch.bulk.docs.save('carb%2Fgrid%2Fstate4k%2fhpms',df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
     }
   }
 }

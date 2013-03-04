@@ -106,8 +106,8 @@ runme <- function(){
     geoids <- sort(unique(df.grid$geo_id))
     overlap <- hpms.subset$geo_id %in% geoids
     hpms.subset <- hpms.subset[!overlap,]
-    for (year in c(2007,2008,2009)){
-      source('./monthloop')
+    for (year in c(2007,2009)){
+      source('./monthloop.R')
     }
   }
 }

@@ -1,5 +1,5 @@
 
-    for(month in c(2,3,4,5,6,7,8,9,10,12)){
+    for(month in c(1,2,3,4,5,6,7,8,9,10,11,12)){
       ## data.fetch has to get data for all the grid cells, by month, year
       df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=FALSE)
       ## df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=FALSE)

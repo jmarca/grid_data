@@ -52,6 +52,31 @@ grid.query <- paste(grid.with
   df.grid
 }
 
+get.grids.with.hpms.data <- function(basin){
+  grid.with = paste("with basingrids as (select i_cell,j_cell,"
+,"st_centroid(grids.geom4326) as centroid"
+,", geom4326"
+," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
+," where basin_name='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
+## select grid cells with hpm records in them
+grid.query <- paste(grid.with
+                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                    ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,h.
+'perc_single_unit',
+'avg_single_unit', 
+'perc_combination',
+'avg_combination', "
+                    ," from basingrids"
+                    ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+                    ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                    ," group by i_cell,j_cell,lon,lat"
+                    ,sep='')
+  print(grid.query)
+  rs <- dbSendQuery(spatialvds.con,grid.query)
+  df.grid <- fetch(rs,n=-1)
+  df.grid
+}
+
 get.grids.with.detectors <- function(basin){
 
   grid.with = paste("with basingrids as (select i_cell,j_cell,"
@@ -101,11 +126,6 @@ runme <- function(){
       df.hpms.grids$i_cell <= max(df.grid$i_cell[idx]) &
         df.hpms.grids$j_cell >= min(df.grid$j_cell[idx]) &
           df.hpms.grids$j_cell <= max(df.grid$j_cell[idx])
-    hpms.subset <- df.hpms.grids[hpms.in.range,]
-    ## eliminate overlaps
-    geoids <- sort(unique(df.grid$geo_id))
-    overlap <- hpms.subset$geo_id %in% geoids
-    hpms.subset <- hpms.subset[!overlap,]
     for (year in c(2007,2009)){
       source('./monthloop.R')
     }

@@ -2,6 +2,9 @@ library(spTimer)
 source('./safetylib/remoteFiles.R')
 source('./safetylib/couchUtils.R')
 source('./loadJSON.R')
+
+grid.couch.db <- 'carb%2fgrid%2fstate4k'
+
 get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
 
    load.remote.file(server,service='grid',root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
@@ -20,7 +23,7 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE){
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
     )
-  json <- couch.allDocs('carb%2fgrid%2fstate4k' , query=query, local=local)
+  json <- couch.allDocs(grid.couch.db , query=query, local=local)
   return(json)
 }
 
@@ -29,7 +32,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-  json <- couch.get('carb%2fgrid%2fstate4k' , docname=doc, local=local)
+  json <- couch.get(grid.couch.db , docname=doc, local=local)
   return(json)
 }
 
@@ -100,7 +103,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
   
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.5,distance.method="geodetic:km",report=10,scale.transform="SQRT")
+  post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.05,distance.method="geodetic:km",report=10,scale.transform="SQRT")
   post.gp.fit
   
 }
@@ -127,5 +130,5 @@ data.predict <- function(model,df.pred.grid,ts.un){
   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
   print(grid.coords)
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.5,distance.method="geodetic:km")
+  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.05,distance.method="geodetic:km")
 }

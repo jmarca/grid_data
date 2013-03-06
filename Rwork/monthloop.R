@@ -42,7 +42,7 @@ for(month in months){
       ## abort if already done in couchdb
       couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
       test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-      if(test.doc.json$error != "not_found") next
+      if('error' %in% names(test.doc.json) ) next
       print(paste('processing',couch.test.doc))
 
       grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)

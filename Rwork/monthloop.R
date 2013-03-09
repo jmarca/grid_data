@@ -1,5 +1,6 @@
 hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 months=1:12
+gc()
 
 for(month in months){
 
@@ -33,14 +34,13 @@ for(month in months){
   if( dim(df.data)[1] > 8000 ){
       # split into halves
     maxday <- max(df.data$day)
-    batch1 <- df.data$day <= maxday/2
-    batch2 <- df.data$day > maxday/2
+    batch1 <- df.data$month == month-1 && df.data$day <= maxday/2
+    batch2 <- !batch1
     usethese = list(batch1,batch2)
   }
   
   for(batch.idx in usethese){
     batch <- df.data[batch.idx,]
-    df.all.predictions <- data.frame()
     
     minday <- min(batch$day)
     if(minday<10) minday <- paste('0',minday,sep='')
@@ -55,59 +55,57 @@ for(month in months){
       df.pred.grid <- hpms.subset[cell,]
       couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
       test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-      if('error' %in% names(test.doc.json) ) hpmstodo[cell] <- FALSE
+      if('error' %in% names(test.doc.json) ){
+        hpmstodo[cell] <- TRUE ## true means need to do this document
+      } else {
+        hpmstodo[cell] <- FALSE ## false means doc is dropped from index
+      }
     }
     print(length(picker[hpmstodo]))
     if(length(picker[hpmstodo])<1){
       next
     }
     ## now loop over the variables to model and predict
+
+    var.models <- list()
     for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
-      ## model
-      post.gp.fit <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
-      
-      df.pred.result = data.frame()
-      ts.un <- sort(unique(batch$ts2))
-      n.times = length(ts.un)
-      for(sim.set in picker[hpmstodo]){ 
-
-        df.pred.grid <- hpms.subset[sim.set,]
-        
-        print(paste('processing',couch.test.doc))
-        
-        grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
-        ## save this in df.pred.result
-        df.predicted <- data.frame(var=grid.pred$Median)
-        names(df.predicted) <- variable
-        df.predicted$i_cell <- hpms.subset[sim.set,'i_cell']
-        df.predicted$j_cell <- hpms.subset[sim.set,'j_cell']
-        df.predicted$geom_id<- hpms.subset[sim.set,'geo_id']
-        if(dim(df.pred.result)[1]==0){
-          df.pred.result <<- df.predicted
-        }else{
-          df.pred.result <<- rbind(df.pred.result,df.predicted)
-        }
-      }
-      if(dim(df.pred.result)[1] == 0)
-      df.pred.result$tsct <- sort(unique( batch$tsct))
-      ## now save the predictions in df.prediciton, and loop over the variables
-      if(dim(df.all.predictions)[1]==0){
-        df.all.predictions <<- df.pred.result
-      }else{
-        ## use merge here
-        df.all.predictions <<- merge(df.all.predictions,df.pred.result)
-      }
+      var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
     }
-    ## now dump that back into couchdb
-    ## slap on ts from the original data
-    df.all.predictions$ts = sort(unique(batch$ts))
-    df.all.predictions$tsct <- NULL
-    rnm = names(df.all.predictions)
-    names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-    ## need to clean up the mess from the bad save, with a view and then a bulk delete
-    couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
-  }
-}
+    gc()
+    
+    for(sim.set in picker[hpmstodo]){ 
+      df.pred.grid <- hpms.subset[sim.set,]
+      couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+      print(paste('processing',couch.test.doc))
 
+      ts.un <- sort(unique(batch$ts2))
+      ts.ct <- sort(unique( batch$tsct))
+      ts.ts = sort(unique(batch$ts))      
+      n.times = length(ts.un)
+        
+      df.all.predictions <- data.frame('ts'= ts.ts)
+      df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
+      df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
+      df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
+
+
+      for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
+        ## model
+        post.gp.fit <- var.models[[variable]]
+      
+        grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
+        ## save the median prediction
+        df.all.predictions[,variable] <- grid.pred$Median
+
+      }
+      ## now dump that back into couchdb
+      rnm = names(df.all.predictions)
+      names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+
+      couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
+    } ## loop to the next grid cell
+  }## loop to the next batch
+
+}
 
   

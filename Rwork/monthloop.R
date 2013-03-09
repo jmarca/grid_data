@@ -41,14 +41,26 @@ for(month in months){
   for(batch.idx in usethese){
     batch <- df.data[batch.idx,]
     df.all.predictions <- data.frame()
-
+    
     minday <- min(batch$day)
     if(minday<10) minday <- paste('0',minday,sep='')
     monthstr = month
     if(month < 10) monthstr <- paste('0',month,sep='')
     ## form date part of checking URL for couchdb
     couch.test.date <- paste(paste(year,monthstr,minday,sep='-'),"00%3A00",sep='%20')
-    
+    print(paste('checking',couch.test.date))
+    hpmstodo <- picker > 0
+    for(cell in picker){
+      ## abort if already done in couchdb
+      df.pred.grid <- hpms.subset[cell,]
+      couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+      test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
+      if('error' %in% names(test.doc.json) ) hpmstodo[cell] <- FALSE
+    }
+    print(length(picker[hpmstodo]))
+    if(length(picker[hpmstodo])<1){
+      next
+    }
     ## now loop over the variables to model and predict
     for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
       ## model
@@ -57,14 +69,10 @@ for(month in months){
       df.pred.result = data.frame()
       ts.un <- sort(unique(batch$ts2))
       n.times = length(ts.un)
-      for(iter in 1:simlim){ 
-        sim.set <- picker[iter]
+      for(sim.set in picker[hpmstodo]){ 
+
         df.pred.grid <- hpms.subset[sim.set,]
         
-        ## abort if already done in couchdb
-        couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-        test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-        if('error' %in% names(test.doc.json) ) next
         print(paste('processing',couch.test.doc))
         
         grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
@@ -80,6 +88,7 @@ for(month in months){
           df.pred.result <<- rbind(df.pred.result,df.predicted)
         }
       }
+      if(dim(df.pred.result)[1] == 0)
       df.pred.result$tsct <- sort(unique( batch$tsct))
       ## now save the predictions in df.prediciton, and loop over the variables
       if(dim(df.all.predictions)[1]==0){
@@ -89,7 +98,7 @@ for(month in months){
         df.all.predictions <<- merge(df.all.predictions,df.pred.result)
       }
     }
-OA    ## now dump that back into couchdb
+    ## now dump that back into couchdb
     ## slap on ts from the original data
     df.all.predictions$ts = sort(unique(batch$ts))
     df.all.predictions$tsct <- NULL
@@ -99,3 +108,6 @@ OA    ## now dump that back into couchdb
     couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
   }
 }
+
+
+  

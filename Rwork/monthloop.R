@@ -93,16 +93,23 @@ for(month in months){
         ## model
         post.gp.fit <- var.models[[variable]]
       
-        grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
-        ## save the median prediction
-        df.all.predictions[,variable] <- grid.pred$Median
+        pred.result <- try (
+          grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
+          ## save the median prediction
+          df.all.predictions[,variable] <- grid.pred$Median
+          )
+        if(class(pred.result) == "try-error"){
+          print ("\n Error predicting \n")
+        }
 
       }
-      ## now dump that back into couchdb
-      rnm = names(df.all.predictions)
-      names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-
-      couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
+      if(dim(df.all.predictions)[2]>4){
+        ## now dump that back into couchdb
+        rnm = names(df.all.predictions)
+        names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+        
+        couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
+      }
     } ## loop to the next grid cell
   }## loop to the next batch
 

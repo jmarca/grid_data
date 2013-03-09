@@ -92,16 +92,14 @@ for(month in months){
       for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
         ## model
         post.gp.fit <- var.models[[variable]]
-      
-        pred.result <- try (
-          grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un)
-          ## save the median prediction
-          df.all.predictions[,variable] <- grid.pred$Median
-          )
+        grid.pred <- list()
+        pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
         if(class(pred.result) == "try-error"){
           print ("\n Error predicting \n")
+        }else{
+          ## save the median prediction
+          df.all.predictions[,variable] <- grid.pred$Median
         }
-
       }
       if(dim(df.all.predictions)[2]>4){
         ## now dump that back into couchdb

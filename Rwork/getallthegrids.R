@@ -107,18 +107,20 @@ process.grids <- function(df.grid){
   
 }
 
+library(cluster)
 
 runme <- function(){
   df.grid <- get.grids.with.detectors('SAN JOAQUIN VALLEY')
   df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
-  cl <- cl.df.grid<-cclust(as.matrix(df.grid[,c('lon','lat')]),5,20,verbose=TRUE,method="kmeans")
-  n <- cl$ncenters
-
+  ## want clusters of about 20 ... 50 is too big
+  numclust = 5
+  cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
+  ## if a cluster is too big, just trim it down
   df.hpms.grids <- get.grids.with.hpms('SAN JOAQUIN VALLEY')
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
   
-  for(i in 1:n){
-    idx <- cl$cluster==i
+  for(i in 1:numclust){
+    idx <- cl$clustering==i
     ## are we doing daily, monthly, what?  what canthe computer handle?
     ## start with monthly, go from there
 
@@ -126,7 +128,7 @@ runme <- function(){
       df.hpms.grids$i_cell <= max(df.grid$i_cell[idx]) &
         df.hpms.grids$j_cell >= min(df.grid$j_cell[idx]) &
           df.hpms.grids$j_cell <= max(df.grid$j_cell[idx])
-    for (year in c(2007,2009)){
+    for (year in c(2007,2008,2009)){
       source('./monthloop.R')
     }
   }

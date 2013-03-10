@@ -1,9 +1,4 @@
-hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
-months=1:12
 gc()
-
-for(month in months){
-
   ## data.fetch has to get data for all the grid cells, by month, year
   df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=FALSE)
   ## df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=FALSE)
@@ -111,6 +106,6 @@ for(month in months){
     } ## loop to the next grid cell
   }## loop to the next batch
 
-}
+
 
   

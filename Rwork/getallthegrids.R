@@ -118,18 +118,20 @@ runme <- function(){
   ## if a cluster is too big, just trim it down
   df.hpms.grids <- get.grids.with.hpms('SAN JOAQUIN VALLEY')
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
-  
-  for(i in 1:numclust){
-    idx <- cl$clustering==i
-    ## are we doing daily, monthly, what?  what canthe computer handle?
-    ## start with monthly, go from there
 
-    hpms.in.range <- df.hpms.grids$i_cell >= min(df.grid$i_cell[idx]) &
-      df.hpms.grids$i_cell <= max(df.grid$i_cell[idx]) &
-        df.hpms.grids$j_cell >= min(df.grid$j_cell[idx]) &
-          df.hpms.grids$j_cell <= max(df.grid$j_cell[idx])
-    for (year in c(2007,2008,2009)){
-      source('./monthloop.R')
+  months=1:12
+  
+  for (year in c(2007,2008,2009)){
+    for(i in 1:numclust){
+      idx <- cl$clustering==i
+      hpms.in.range <- df.hpms.grids$i_cell >= min(df.grid$i_cell[idx]) &
+        df.hpms.grids$i_cell <= max(df.grid$i_cell[idx]) &
+          df.hpms.grids$j_cell >= min(df.grid$j_cell[idx]) &
+            df.hpms.grids$j_cell <= max(df.grid$j_cell[idx])
+      hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
+      for(month in months){
+        source('./monthloop.R')
+      }
     }
   }
 }

@@ -88,47 +88,47 @@ gc()
       }
     }else{
       ## more than one cell, need to model, can't just copy
-    ## now loop over the variables to model and predict
-
-    var.models <- list()
-    for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
-      var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
-    }
-    gc()
-    
-    for(sim.set in picker[hpmstodo]){ 
-      df.pred.grid <- hpms.subset[sim.set,]
-      couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-      print(paste('processing',couch.test.doc))
-        
-      df.all.predictions <- data.frame('ts'= ts.ts)
-      df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
-      df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
-      df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-
-
+      ## now loop over the variables to model and predict
+      
+      var.models <- list()
       for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
-        ## model
-        post.gp.fit <- var.models[[variable]]
-        grid.pred <- list()
-        pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
-        if(class(pred.result) == "try-error"){
-          print ("\n Error predicting \n")
-        }else{
-          ## save the median prediction
-          df.all.predictions[,variable] <- grid.pred$Median
-        }
+        var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
       }
-      if(dim(df.all.predictions)[2]>4){
-        ## now dump that back into couchdb
-        rnm = names(df.all.predictions)
-        names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+      gc()
+      
+      for(sim.set in picker[hpmstodo]){ 
+        df.pred.grid <- hpms.subset[sim.set,]
+        couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+        print(paste('processing',couch.test.doc))
         
-        couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
-      }
-    } ## loop to the next grid cell
-  }## loop to the next batch
-
+        df.all.predictions <- data.frame('ts'= ts.ts)
+        df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
+        df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
+        df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
+        
+        
+        for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
+          ## model
+          post.gp.fit <- var.models[[variable]]
+          grid.pred <- list()
+          pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
+          if(class(pred.result) == "try-error"){
+            print ("\n Error predicting \n")
+          }else{
+            ## save the median prediction
+            df.all.predictions[,variable] <- grid.pred$Median
+          }
+        }
+        if(dim(df.all.predictions)[2]>4){
+          ## now dump that back into couchdb
+          rnm = names(df.all.predictions)
+          names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+          
+          couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
+        }
+      } ## loop to the next grid cell
+    }## loop to the next batch
+  }
 
 
   

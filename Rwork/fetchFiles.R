@@ -112,6 +112,8 @@ data.predict <- function(model,df.pred.grid,ts.un){
   n.sites <- length(df.pred.grid[,1])
   df.pred.grid$s.idx <- 1:n.sites
 
+  ts.psx <- as.POSIXct(ts.un)
+
   n.times <- length(ts.un)
   dat.mrg <- matrix(NA,n.sites*n.times,8)
   dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number

@@ -29,7 +29,7 @@ gc()
   if( dim(df.data)[1] > 8000 ){
       # split into halves
     maxday <- max(df.data$day)
-    batch1 <- df.data$month == month-1 && df.data$day <= maxday/2
+    batch1 <- df.data$month == month-1 & df.data$day <= maxday/2
     batch2 <- !batch1
     usethese = list(batch1,batch2)
   }

@@ -109,14 +109,34 @@ process.grids <- function(df.grid){
 
 library(cluster)
 
+hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
+
+
+get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
+    ## assume without proof that a cell can influence at least a few grid cells on either side.
+    ## 4 km square, conservative guess is one square left right up down
+    ## make it more with bigger value to expand parameter
+
+    icell.min <- min(df.grid$i_cell) - expand
+    icell.max <- max(df.grid$i_cell) + expand
+    jcell.min <- min(df.grid$j_cell) - expand
+    jcell.max <- max(df.grid$j_cell) + expand
+    ## return value:
+        df.hpms.grids$i_cell >= icell.min &
+        df.hpms.grids$i_cell <= icell.max &
+        df.hpms.grids$j_cell >= jcell.min &
+        df.hpms.grids$j_cell <= jcell.max
+}
 runme <- function(){
-  df.grid <- get.grids.with.detectors('SAN JOAQUIN VALLEY')
+  df.grid <- get.grids.with.detectors('NORTH COAST')
   df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
   ## want clusters of about 20 ... 50 is too big
-  numclust = 5
+  
+  numclust = floor(dim(df.grid)[1] / 20)
+  if(numclust > 5) numclust = 5
   cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
   ## if a cluster is too big, just trim it down
-  df.hpms.grids <- get.grids.with.hpms('SAN JOAQUIN VALLEY')
+  df.hpms.grids <- get.grids.with.hpms('NORTH COAST')
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
   months=1:12
@@ -124,11 +144,7 @@ runme <- function(){
   for (year in c(2007,2008,2009)){
     for(i in 1:numclust){
       idx <- cl$clustering==i
-      hpms.in.range <- df.hpms.grids$i_cell >= min(df.grid$i_cell[idx]) &
-        df.hpms.grids$i_cell <= max(df.grid$i_cell[idx]) &
-          df.hpms.grids$j_cell >= min(df.grid$j_cell[idx]) &
-            df.hpms.grids$j_cell <= max(df.grid$j_cell[idx])
-      hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
+      hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
       for(month in months){
         source('./monthloop.R')
       }

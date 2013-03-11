@@ -36,6 +36,11 @@ gc()
   
   for(batch.idx in usethese){
     batch <- df.data[batch.idx,]
+
+      ts.un <- sort(unique(batch$ts2))
+      ts.ct <- sort(unique( batch$tsct))
+      ts.ts = sort(unique(batch$ts))      
+      n.times = length(ts.un)
     
     minday <- min(batch$day)
     if(minday<10) minday <- paste('0',minday,sep='')
@@ -60,6 +65,29 @@ gc()
     if(length(picker[hpmstodo])<1){
       next
     }
+
+    if(length(unique(df.data$s.idx))<2){
+       ## just assign frac to hpms cells
+      for(sim.set in picker[hpmstodo]){ 
+        df.pred.grid <- hpms.subset[sim.set,]
+        df.all.predictions <- data.frame('ts'= ts.ts)
+        df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
+        df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
+        df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
+        
+        for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
+          df.all.predictions[,variable] <- df.data[,variable]
+        }
+        if(dim(df.all.predictions)[2]>4){
+          ## now dump that back into couchdb
+          rnm = names(df.all.predictions)
+          names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+          save.these = ! is.na(df.all.predictions$n)
+          couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
+        }
+      }
+    }else{
+      ## more than one cell, need to model, can't just copy
     ## now loop over the variables to model and predict
 
     var.models <- list()
@@ -72,11 +100,6 @@ gc()
       df.pred.grid <- hpms.subset[sim.set,]
       couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
       print(paste('processing',couch.test.doc))
-
-      ts.un <- sort(unique(batch$ts2))
-      ts.ct <- sort(unique( batch$tsct))
-      ts.ts = sort(unique(batch$ts))      
-      n.times = length(ts.un)
         
       df.all.predictions <- data.frame('ts'= ts.ts)
       df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']

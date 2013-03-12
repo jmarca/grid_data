@@ -42,7 +42,7 @@ gc()
       ts.ts = sort(unique(batch$ts))      
       n.times = length(ts.un)
     
-    minday <- min(batch$day)
+    minday <- min(batch$day)+1
     if(minday<10) minday <- paste('0',minday,sep='')
     monthstr = month
     if(month < 10) monthstr <- paste('0',month,sep='')
@@ -70,6 +70,8 @@ gc()
        ## just assign frac to hpms cells
       for(sim.set in picker[hpmstodo]){ 
         df.pred.grid <- hpms.subset[sim.set,]
+        couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+        print(paste('processing',couch.test.doc))
         df.all.predictions <- data.frame('ts'= ts.ts)
         df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
         df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']

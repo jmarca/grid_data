@@ -113,6 +113,7 @@ hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
 
 get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
+
     ## assume without proof that a cell can influence at least a few grid cells on either side.
     ## 4 km square, conservative guess is one square left right up down
     ## make it more with bigger value to expand parameter
@@ -127,10 +128,15 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell >= jcell.min &
         df.hpms.grids$j_cell <= jcell.max
 }
+
+
 runme <- function(){
-  df.grid <- get.grids.with.detectors('NORTH COAST')
+
+  gridenv = Sys.getenv(c("AIRBASIN"))
+  basin = gridenv[1]
+  df.grid <- get.grids.with.detectors(basin)
   df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
-  df.hpms.grids <- get.grids.with.hpms('NORTH COAST')
+  df.hpms.grids <- get.grids.with.hpms(basin)
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
   months=1:12

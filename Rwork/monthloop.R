@@ -5,6 +5,11 @@ gc()
   ## data.pred will model the data, and then predict median fraction
   ## for passed in hpms grids
 
+  ## sometimes there just isn't any data
+  if(dim(df.data)[1]==0){
+    print(paste('no data for',year,month,'cluster index',idx))
+  }else{
+
   ## here I have to do the subset thing...
   hpms.subset <- df.hpms.grids[hpms.in.range,]
   ## eliminate overlaps
@@ -16,15 +21,15 @@ gc()
   simlim <- length(hpms.subset[,1])
   picker <- 1:simlim
                                         # just do one at a time for now
-      
+
   ## okay, now loop *IF* the size of df.data is unmanageable
   ## in testing, dim(df.data)[1] =  17135 broke the model
   ## so, if up to half of that, chop days in half
-  
+
   ## lordy I hate R.  so clunky
 
   ## this is horrible code that needs to be fixed, but I just want to move on
-  
+
   usethese <- list(1:dim(df.data)[1])
   if( dim(df.data)[1] > 8000 ){
       # split into halves
@@ -33,15 +38,15 @@ gc()
     batch2 <- !batch1
     usethese = list(batch1,batch2)
   }
-  
+
   for(batch.idx in usethese){
     batch <- df.data[batch.idx,]
 
       ts.un <- sort(unique(batch$ts2))
       ts.ct <- sort(unique( batch$tsct))
-      ts.ts = sort(unique(batch$ts))      
+      ts.ts = sort(unique(batch$ts))
       n.times = length(ts.un)
-    
+
     minday <- min(batch$day)+1
     if(minday<10) minday <- paste('0',minday,sep='')
     monthstr = month
@@ -68,7 +73,7 @@ gc()
 
     if(length(unique(df.data$s.idx))<2){
        ## just assign frac to hpms cells
-      for(sim.set in picker[hpmstodo]){ 
+      for(sim.set in picker[hpmstodo]){
         df.pred.grid <- hpms.subset[sim.set,]
         couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
         print(paste('processing',couch.test.doc))
@@ -76,7 +81,7 @@ gc()
         df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
         df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
         df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-        
+
         for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
           df.all.predictions[,variable] <- df.data[,variable]
         }
@@ -91,24 +96,24 @@ gc()
     }else{
       ## more than one cell, need to model, can't just copy
       ## now loop over the variables to model and predict
-      
+
       var.models <- list()
       for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
         var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
       }
       gc()
-      
-      for(sim.set in picker[hpmstodo]){ 
+
+      for(sim.set in picker[hpmstodo]){
         df.pred.grid <- hpms.subset[sim.set,]
         couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
         print(paste('processing',couch.test.doc))
-        
+
         df.all.predictions <- data.frame('ts'= ts.ts)
         df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
         df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
         df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-        
-        
+
+
         for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
           ## model
           post.gp.fit <- var.models[[variable]]
@@ -125,12 +130,12 @@ gc()
           ## now dump that back into couchdb
           rnm = names(df.all.predictions)
           names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-          
+
           couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
         }
       } ## loop to the next grid cell
     }## loop to the next batch
   }
+}
 
 
-  

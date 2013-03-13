@@ -23,13 +23,13 @@ get.all.the.grids <- function(basin){
   ## assume area is a county for now
 
   ## form a sql command
-  
+
   grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where basin_name=",basin," and grids.geom4326 && basins.geom_4326" )
   print(wim.query)
   rs <- dbSendQuery(con,wim.query)
   df.wim <- fetch(rs,n=-1)
   df.wim
-  
+
 }
 
 get.grids.with.hpms <- function(basin){
@@ -63,7 +63,7 @@ grid.query <- paste(grid.with
                     ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
                     ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,h.
 'perc_single_unit',
-'avg_single_unit', 
+'avg_single_unit',
 'perc_combination',
 'avg_combination', "
                     ," from basingrids"
@@ -99,12 +99,12 @@ grid.query <- paste(grid.with
 }
 
 cluster.grids <- function(df.grid){
-  
+
   cl.df.grid
 }
-  
+
 process.grids <- function(df.grid){
-  
+
 }
 
 library(cluster)
@@ -146,10 +146,10 @@ runme <- function(){
   numclust = ceiling(dim(df.grid)[1] / 20)
   if(numclust > 5) numclust = 5
   cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
-  
+
   for (year in c(2007,2008,2009)){
-    for(i in 1:numclust){
-      idx <- cl$clustering==i
+    for(cl.i in 1:numclust){
+      idx <- cl$clustering==cl.i
       hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
       for(month in months){
         source('./monthloop.R')

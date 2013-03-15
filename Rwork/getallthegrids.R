@@ -147,13 +147,13 @@ runme <- function(){
   if(numclust > 5) numclust = 5
   cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
 
-  for (year in c(2007,2008,2009)){
-    for(cl.i in 1:numclust){
-      idx <- cl$clustering==cl.i
-      hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
-      for(month in months){
-        source('./monthloop.R')
-      }
+  year = Sys.getenv(c("CARB_GRID_YEAR"))
+  print(paste('processing',basin,year))
+  for(cl.i in 1:numclust){
+    idx <- cl$clustering==cl.i
+    hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
+    for(month in months){
+      source('./monthloop.R')
     }
   }
 }

@@ -19,7 +19,7 @@ gc()
 
   ## loop over hpms cells,  and simulate what should be there
   simlim <- length(hpms.subset[,1])
-  picker <- sample(1:simlim) # randomly permute
+  picker <- 1:simlim
                                         # just do one at a time for now
 
   ## okay, now loop *IF* the size of df.data is unmanageable
@@ -70,10 +70,12 @@ gc()
     if(length(picker[hpmstodo])<1){
       next
     }
-
+    picked = picker[hpmstodo]
+    if(length(picked)>1)    picked = sample(picked) ## randomly permute
+    
     if(length(unique(df.data$s.idx))<2){
        ## just assign frac to hpms cells
-      for(sim.set in picker[hpmstodo]){
+      for(sim.set in picked){
         df.pred.grid <- hpms.subset[sim.set,]
         couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
         test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
@@ -106,7 +108,7 @@ gc()
       }
       gc()
 
-      for(sim.set in picker[hpmstodo]){
+      for(sim.set in picked){
         df.pred.grid <- hpms.subset[sim.set,]
         couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
         test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)

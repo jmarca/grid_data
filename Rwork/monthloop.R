@@ -19,7 +19,7 @@ gc()
 
   ## loop over hpms cells,  and simulate what should be there
   simlim <- length(hpms.subset[,1])
-  picker <- 1:simlim
+  picker <- sample(1:simlim) # randomly permute
                                         # just do one at a time for now
 
   ## okay, now loop *IF* the size of df.data is unmanageable

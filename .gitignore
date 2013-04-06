@@ -1,3 +1,5 @@
-/node_modules/
-/Rwork/.RData
-/Rwork/.Rhistory
+node_modules/
+Rwork/.RData
+Rwork/.Rhistory
+Rwork/Rtmp**
+Rwork/*.pdf

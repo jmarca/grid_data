@@ -7,8 +7,9 @@
     "test": "test"
   },
     "dependencies": {
-        "lodash": "~0.7.0",
+        "lodash": "",
         "pg":"",
+        "superagent":"",
         "request":"",
         "topojson":"",
         "optimist":""

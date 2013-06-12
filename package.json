@@ -7,11 +7,13 @@
     "test": "test"
   },
     "dependencies": {
-        "lodash": "~0.7.0",
+        "lodash": "",
         "pg":"",
+        "superagent":"",
         "request":"",
         "topojson":"",
-        "optimist":""
+        "optimist":"",
+        "calvad_compute_aadt":"git://github.com/jmarca/calvad_compute_aadt.git"
     },
     "devDependencies": {
         "should": "",

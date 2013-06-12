@@ -4,7 +4,7 @@ var should = require('should')
 
 var async = require('async')
 var _ = require('lodash')
-var compute_aadt = require('../lib/compute_aadt').compute_aadt
+var compute_aadt = require('calvad_compute_aadt')
 var fs = require('fs')
 var grab_geom = require('../lib/grab_geom').grab_geom
 var couch_file = require('../lib/couch_file').couch_file

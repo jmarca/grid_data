@@ -34,56 +34,8 @@ var options ={'chost':chost
              ,'password':ppass
              }
 
-describe('couch_file',function(){
-    var created_locally=false
-    before(function(done){
-        console.log('creating temporary couchdb')
-        // create the test couchdb
-        var couch = 'http://'+chost+':'+cport+'/'+test_db
-        var opts = {'uri':couch
-                   ,'method': "PUT"
-                   ,'headers': {}
-                   };
-        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
-        opts.headers['Content-Type'] =  'application/json'
-        request(opts
-               ,function(e,r,b){
-                    if(e) return done(e)
-                    created_locally=true
-                    return done()
-                })
-        return null
-    })
-    after(function(done){
-        if(!created_locally) return done()
 
-        var couch = 'http://'+chost+':'+cport+'/'+test_db
-        // bail in development
-        //console.log(couch)
-        //return done()
-        console.log('deleting temporary couchdb')
-        var opts = {'uri':couch
-                   ,'method': "DELETE"
-                   ,'headers': {}
-                   };
-        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
-        opts.headers['Content-Type'] =  'application/json'
-        request(opts
-               ,function(e,r,b){
-                    if(e) return done(e)
-                    return done()
-                })
-        return null
-    })
-
-    it('should write and overwrite couchdb entries'
-      ,function(done){
-           async.waterfall([create_couch_entries,overwrite_couch_entries],done)
-       })
-})
-
-
-function create_couch_entries(done){
+function create_couch_entries(cb){
     var task={file:'./test/files/hourly/2009/100/263.json'
              ,'year':2009
              ,'i':100
@@ -131,9 +83,11 @@ function create_couch_entries(done){
                        console.log('aadt done')
                        //task.grid = result.grid.grid
                        task = result.aadt
+                       console.log(_.keys(task))
                        // all set to set couch saving
                        couch_file(task
                                  ,function(err,cbtask){
+                                      console.log('check result of saving to couchdb')
                                       should.not.exist(err)
                                       // check with couchdb, make sure that what you get is a topology
                                       var couch = 'http://'+chost+':'+cport+'/'+test_db
@@ -200,7 +154,7 @@ function create_couch_entries(done){
                                                                       })
                                                       }]
                                                     ,function(err){
-                                                         done(err,docs)
+                                                         cb(err,docs)
                                                      });
 
                                       return null
@@ -210,7 +164,8 @@ function create_couch_entries(done){
                    })
 }
 
-function overwrite_couch_entries(origdocs,done){
+function overwrite_couch_entries(origdocs,cb2){
+    console.log('over write test begins here')
     var task={file:'./test/files/hourly/2009/100/263.json'
              ,'year':2009
              ,'i':100
@@ -219,12 +174,14 @@ function overwrite_couch_entries(origdocs,done){
     async.parallel({aadt:function(cb){
                         fs.readFile(task.file
                                    ,function(err,text){
+                                        console.log('file read')
                                         should.not.exist(err)
                                         should.exist(text)
                                         task.data = JSON.parse(text)
                                         compute_aadt(task
                                                     ,function(err,cbtask){
                                                          // file should not exist
+                                                         console.log('aadt computed')
                                                          should.not.exist(err)
                                                          should.exist(cbtask)
                                                          cb(null,cbtask)
@@ -233,9 +190,11 @@ function overwrite_couch_entries(origdocs,done){
                     }}
                   ,function(err,result){
                        task = result.aadt
+                       console.log(_.keys(task))
                        // all set to set couch saving
                        couch_file(task
                                  ,function(err,cbtask){
+                                      console.log('check result of saving to couchdb')
                                       should.not.exist(err)
                                       var couch = 'http://'+chost+':'+cport+'/'+test_db
                                       var uri2 = couch +'/_all_docs?'+['include_docs=false'
@@ -255,8 +214,9 @@ function overwrite_couch_entries(origdocs,done){
                                                                  row.should.have.property('value')
                                                                  row.value.should.have.property('rev')
                                                                  origdocs[row.key]._rev.should.not.eql(row.value.rev)
+
                                                              });
-                                                      return done()
+                                                      return cb2()
                                                   });
                                   });
 
@@ -266,3 +226,61 @@ function overwrite_couch_entries(origdocs,done){
                    })
     return null
 }
+
+
+
+describe('couch_file',function(){
+
+        var created_locally=false
+
+    before(function(done){
+        console.log('creating temporary couchdb')
+        // create the test couchdb
+        var couch = 'http://'+chost+':'+cport+'/'+test_db
+        var opts = {'uri':couch
+                   ,'method': "PUT"
+                   ,'headers': {}
+                   };
+        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
+        opts.headers['Content-Type'] =  'application/json'
+        request(opts
+               ,function(e,r,b){
+                    if(e) return done(e)
+                    created_locally=true
+                    return done()
+                })
+        return null
+    })
+
+    after(function(done){
+        if(!created_locally) return done()
+        console.log('clean up')
+
+        var couch = 'http://'+chost+':'+cport+'/'+test_db
+        // bail in development
+        //console.log(couch)
+        //return done()
+        console.log('deleting temporary couchdb')
+        var opts = {'uri':couch
+                   ,'method': "DELETE"
+                   ,'headers': {}
+                   };
+        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
+        opts.headers['Content-Type'] =  'application/json'
+        request(opts
+               ,function(e,r,b){
+                    if(e) return done(e)
+                    return done()
+                })
+        return null
+    })
+
+    it('should write and overwrite couchdb entries'
+      ,function(done){
+           async.waterfall([create_couch_entries,overwrite_couch_entries]
+                              ,function(e,r){
+                                   console.log('done with waterfall')
+                                   return done()
+                               })
+           })
+})

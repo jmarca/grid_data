@@ -81,6 +81,7 @@ describe('couch_aadt',function(){
            var task={file:'./test/files/hourly/2009/100/263.json'
                     ,options:options
                     ,year:2009}
+           console.log(task)
            async.parallel({grid:function(cb){
                                grab_geom(task
                                         ,function(err,cbtask){

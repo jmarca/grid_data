@@ -14,7 +14,7 @@
         "topojson":"",
         "optimist":"",
         "async": "",
-        "calvad_compute_aadt":"git://github.com/jmarca/calvad_areasa.git",
+        "calvad_areas":"git://github.com/jmarca/calvad_areas.git",
         "calvad_compute_aadt":"git://github.com/jmarca/calvad_compute_aadt.git",
         "couchdb_bulkdoc_saver":"git://github.com/jmarca/couchdb_bulkdoc_saver.git"
     },

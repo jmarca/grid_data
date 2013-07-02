@@ -1,3 +1,7 @@
+## this is sourced in getallthegrids.R, **inside** of the "runme"
+## loop.  for month in months source ./monthloop.R.  So this really is
+## run, once per month
+
 gc()
   ## data.fetch has to get data for all the grid cells, by month, year
   df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=FALSE)
@@ -72,7 +76,7 @@ gc()
     }
     picked = picker[hpmstodo]
     if(length(picked)>1)    picked = sample(picked) ## randomly permute
-    
+
     if(length(unique(df.data$s.idx))<2){
        ## just assign frac to hpms cells
       for(sim.set in picked){
@@ -85,7 +89,7 @@ gc()
           df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
           df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
           df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-          
+
           for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
             df.all.predictions[,variable] <- df.data[,variable]
           }
@@ -118,7 +122,7 @@ gc()
           df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
           df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
           df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-          
+
           for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
             ## model
             post.gp.fit <- var.models[[variable]]
@@ -142,5 +146,3 @@ gc()
     }## loop to the next batch
   }
 }
-
-

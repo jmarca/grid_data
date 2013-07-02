@@ -1,0 +1,18 @@
+# documenting what is going on here
+
+This library is more of working notes that actual code that can run
+right now.  Basically, I load up `getallthegrids.R`, and then execute
+`runme()` function.  This will get the airbasin that is going to be
+analyzed from the environment variable `AIRBASIN`, and the year from
+the environment variable `CARB_GRID_YEAR`, and then it will loop over
+all of the grids in said airbasin and said year, and will estimate the
+most likely hourly fraction of aadt for each grid.
+
+So the next step here, besides tidying up the R code, is to set up an
+external node.js program that sets the environment variables and runs
+through the loop of all years, all airbasins.
+
+# next
+
+Then I need to do the next step of multiplying the AADT for each grid
+(Based on HPMS) with the hourly AADT fraction, and store that in the db.

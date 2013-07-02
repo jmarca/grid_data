@@ -83,7 +83,7 @@ get.grids.with.detectors <- function(basin){
 ,"st_centroid(grids.geom4326) as centroid"
 ,", geom4326"
 ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where basin_name='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
+," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
 
 ## select grid cells with tdetectors records in them
 grid.query <- paste(grid.with
@@ -145,6 +145,7 @@ runme <- function(){
   ## big, will split later into half the time period
   numclust = ceiling(dim(df.grid)[1] / 20)
   if(numclust > 5) numclust = 5
+  print(paste('numclust is ',numclust))
   cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))

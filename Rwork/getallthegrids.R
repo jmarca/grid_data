@@ -129,7 +129,7 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
-
+source('./monthloop.R')
 runme <- function(){
 
   gridenv = Sys.getenv(c("AIRBASIN"))
@@ -145,7 +145,7 @@ runme <- function(){
   ## big, will split later into half the time period
   numclust = ceiling(dim(df.grid)[1] / 20)
   if(numclust > 5) numclust = 5
-  print(paste('numclust is ',numclust))
+  print(paste('numclust is ',numclust,'dims is',dim(df.grid)[1]))
   cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))
@@ -154,7 +154,8 @@ runme <- function(){
     idx <- cl$clustering==cl.i
     hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
     for(month in months){
-      source('./monthloop.R')
+      print(month)
+      monthloop(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=TRUE)
     }
   }
 }

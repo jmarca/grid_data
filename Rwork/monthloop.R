@@ -2,9 +2,12 @@
 ## loop.  for month in months source ./monthloop.R.  So this really is
 ## run, once per month
 
-gc()
+monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=FALSE){
+
+  gc()
   ## data.fetch has to get data for all the grid cells, by month, year
-  df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=FALSE)
+  print (month)
+  df.data <- get.raft.of.grids(df.grid[idx,],month=month,year=year,local=local)
   ## df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=FALSE)
   ## data.pred will model the data, and then predict median fraction
   ## for passed in hpms grids
@@ -145,4 +148,5 @@ gc()
       } ## loop to the next grid cell
     }## loop to the next batch
   }
+}
 }

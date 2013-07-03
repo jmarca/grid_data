@@ -1,6 +1,6 @@
 library(spTimer)
-source('./safetylib/remoteFiles.R')
-source('./safetylib/couchUtils.R')
+source('../components/jmarca-rstats_couch_utils/couchUtils.R')
+source('../components/jmarca-rstats_remote_files/remoteFiles.R')
 source('./loadJSON.R')
 
 grid.couch.db <- 'carb%2fgrid%2fstate4k'
@@ -37,6 +37,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
 }
 
 get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
+  print(month)
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
   ## make a start and end date

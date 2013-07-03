@@ -24,7 +24,7 @@ get.all.the.grids <- function(basin){
 
   ## form a sql command
 
-  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where basin_name=",basin," and grids.geom4326 && basins.geom_4326" )
+  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and grids.geom4326 && basins.geom_4326" )
   print(wim.query)
   rs <- dbSendQuery(con,wim.query)
   df.wim <- fetch(rs,n=-1)
@@ -37,7 +37,7 @@ get.grids.with.hpms <- function(basin){
 ,"st_centroid(grids.geom4326) as centroid"
 ,", geom4326"
 ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where basin_name='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
+," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
 ## select grid cells with hpm records in them
 grid.query <- paste(grid.with
                     ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
@@ -57,7 +57,7 @@ get.grids.with.hpms.data <- function(basin){
 ,"st_centroid(grids.geom4326) as centroid"
 ,", geom4326"
 ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where basin_name='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
+," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
 ## select grid cells with hpm records in them
 grid.query <- paste(grid.with
                     ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"

@@ -115,28 +115,25 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
       }
       gc()
 
-      for(sim.set in picked){
-        df.pred.grid <- hpms.subset[sim.set,]
-        ## I already ran this test above, and I don't do parallel runs
-        ## on the same basin, so off with this test
-        ## couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-        ## test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-        ## if('error' %in% names(test.doc.json) ){
-        ##  print(paste('processing',couch.test.doc))
+      ##for(sim.set in picked){
+        df.pred.grid <- hpms.subset[picked,]
         df.all.predictions <- data.frame('ts'= ts.ts)
-        df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
-        df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
-        df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
 
         for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
           ## model
           post.gp.fit <- var.models[[variable]]
           grid.pred <- list()
+
           pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
           if(class(pred.result) == "try-error"){
             print ("\n Error predicting \n")
           }else{
             ## save the median prediction
+
+            df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
+        df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
+        df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
+
             df.all.predictions[,variable] <- grid.pred$Median
           }
         }

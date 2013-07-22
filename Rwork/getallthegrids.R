@@ -129,7 +129,7 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
-source('./monthloop.R')
+source('./monthloop.multipoint.R')
 runme <- function(){
 
   gridenv = Sys.getenv(c("AIRBASIN"))

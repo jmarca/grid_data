@@ -136,5 +136,5 @@ data.predict <- function(model,df.pred.grid,ts.un){
   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
   print(grid.coords)
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.05,distance.method="geodetic:km")
+  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
 }

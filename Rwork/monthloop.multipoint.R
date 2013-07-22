@@ -38,7 +38,8 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
   ## this is horrible code that needs to be fixed, but I just want to move on
 
   usethese <- list(1:dim(df.data)[1])
-  if( dim(df.data)[1] > 8000 ){
+
+  if( dim(df.data)[1] > 12000 ){ ## at 11175 and 90 cells, hit ram limit of 95%
       # split into halves
     maxday <- max(df.data$day)
     batch1 <- df.data$month == month-1 & df.data$day <= maxday/2
@@ -114,8 +115,10 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
       }
       gc()
-      ##for(sim.set in picked){
-      num.runs = ceiling(length(picked)/90) ## manage RAM
+
+      ## at 11175 batch.idx, 90 cells, hit RAM 95%, so keep that ratio
+      max.cells = ceiling(90 * 11175 / length(batch.idx))
+      num.runs = ceiling(length(picked)/num.cells) ## manage RAM
       index=rep_len(1:num.runs,length=length(picked))
       for(group in 1:num.runs){
 

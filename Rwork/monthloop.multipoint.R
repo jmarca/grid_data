@@ -4,6 +4,56 @@
 
 monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=FALSE){
 
+
+  group.loop <- function(index,picked,hpms.subset,var.models){
+    num.runs <- max(index)
+    for(group in 1:num.runs){
+
+      some.picked <- picked[index==group]
+      df.pred.grid <- hpms.subset[some.picked,]
+      ## df.pred.grid <- hpms.subset[picked,]
+
+      df.all.predictions = list()
+      for(sim.site in 1:(length(some.picked))){
+        df.all.predictions[[sim.site]] <- data.frame('ts'= ts.ts)
+        df.all.predictions[[sim.site]]$i_cell  <- df.pred.grid[sim.site,'i_cell']
+        df.all.predictions[[sim.site]]$j_cell  <- df.pred.grid[sim.site,'j_cell']
+        df.all.predictions[[sim.site]]$geom_id <- df.pred.grid[sim.site,'geo_id']
+      }
+
+      for(variable in names(var.models)){
+        ## model
+        post.gp.fit <- var.models[[variable]]
+        grid.pred <- list()
+        gc()
+        pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
+        if(class(pred.result) == "try-error"){
+          print ("\n Error predicting \n")
+          ## TODO, put a loop in here and dial back the num.cells so that it works
+          stop('must have more groups')
+        }else{
+          ## save the median prediction
+
+          ##> dim(grid.pred$Median)
+          ##[1] 745  86
+          for(sim.site in 1:(length(some.picked))){
+            df.all.predictions[[sim.site]][,variable] <- grid.pred$Median[,sim.site]
+          }
+        }
+        grid.pred <- list()
+      }
+      gc()
+      if(dim(df.all.predictions[[1]])[2]>4){
+        ## now dump that back into couchdb
+        for(sim.site in 1:(length(some.picked))){
+          rnm = names(df.all.predictions[[sim.site]])
+          names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
+          couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
+        }
+      }
+    }
+  }
+
   gc()
   ## data.fetch has to get data for all the grid cells, by month, year
   print (month)
@@ -39,7 +89,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
     usethese <- list(1:dim(df.data)[1])
 
-    if( dim(df.data)[1] > 12000 ){ ## at 11175 and 90 cells, hit ram limit of 95%
+    if( dim(df.data)[1] > 11000 ){ ## at 11175 and 90 cells, hit ram limit of 95%
                                         # split into halves
       maxday <- max(df.data$day)
       batch1 <- df.data$month == month-1 & df.data$day <= maxday/2
@@ -117,51 +167,21 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         gc()
 
         ## at 11175 batch.idx, 90 cells, hit RAM 95%, so keep that ratio
-        max.cells = ceiling(90 * 11175 / length(batch.idx))
+        ## shy by 4.5GB, tweak lower
+        num.cells = ceiling(80 * 11000 / length(batch.idx))
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
-        index=rep_len(1:num.runs,length=length(picked))
-        for(group in 1:num.runs){
+        done.runs <- FALSE
+        while(!done.runs){
 
-          some.picked <- picked[index==group]
-          df.pred.grid <- hpms.subset[some.picked,]
-          ## df.pred.grid <- hpms.subset[picked,]
-
-          df.all.predictions = list()
-          for(sim.site in 1:(length(some.picked))){
-            df.all.predictions[[sim.site]] <- data.frame('ts'= ts.ts)
-            df.all.predictions[[sim.site]]$i_cell  <- df.pred.grid[sim.site,'i_cell']
-            df.all.predictions[[sim.site]]$j_cell  <- df.pred.grid[sim.site,'j_cell']
-            df.all.predictions[[sim.site]]$geom_id <- df.pred.grid[sim.site,'geo_id']
+          index=rep_len(1:num.runs,length=length(picked))
+          runs.result <- try (group.loop(index,picked,hpms.subset,var.models))
+          if(class(runs.result) == "try-error"){
+            print ("\n Error predicting, try more groups \n")
+            num.runs <- num.runs + 1
+          }else{
+            done.runs = TRUE
           }
 
-          for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
-            ## model
-            post.gp.fit <- var.models[[variable]]
-            grid.pred <- list()
-            gc()
-            pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
-            if(class(pred.result) == "try-error"){
-              print ("\n Error predicting \n")
-            }else{
-              ## save the median prediction
-
-              ##> dim(grid.pred$Median)
-              ##[1] 745  86
-              for(sim.site in 1:(length(some.picked))){
-                df.all.predictions[[sim.site]][,variable] <- grid.pred$Median[,sim.site]
-              }
-            }
-            grid.pred <- list()
-          }
-          gc()
-          if(dim(df.all.predictions[[1]])[2]>4){
-            ## now dump that back into couchdb
-            for(sim.site in 1:(length(some.picked))){
-              rnm = names(df.all.predictions[[sim.site]])
-              names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
-              couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
-            }
-          }
         }
       } ## loop to the next grid cell
     }## loop to the next batch

@@ -114,37 +114,52 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         var.models[[variable]] <- data.model(batch,formula=formula(paste(variable,1,sep='~')))
       }
       gc()
-
       ##for(sim.set in picked){
-        df.pred.grid <- hpms.subset[picked,]
-        df.all.predictions <- data.frame('ts'= ts.ts)
+      num.runs = ceiling(length(picked)/90) ## manage RAM
+      index=rep_len(1:num.runs,length=length(picked))
+      for(group in 1:num.runs){
+
+        some.picked <- picked[index==group]
+        df.pred.grid <- hpms.subset[some.picked,]
+        ## df.pred.grid <- hpms.subset[picked,]
+
+        df.all.predictions = list()
+        for(sim.site in 1:(length(some.picked))){
+          df.all.predictions[[sim.site]] <- data.frame('ts'= ts.ts)
+          df.all.predictions[[sim.site]]$i_cell  <- df.pred.grid[sim.site,'i_cell']
+          df.all.predictions[[sim.site]]$j_cell  <- df.pred.grid[sim.site,'j_cell']
+          df.all.predictions[[sim.site]]$geom_id <- df.pred.grid[sim.site,'geo_id']
+        }
 
         for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
           ## model
           post.gp.fit <- var.models[[variable]]
           grid.pred <- list()
-
+          gc()
           pred.result <- try (grid.pred <-  data.predict(post.gp.fit,df.pred.grid,ts.un))
           if(class(pred.result) == "try-error"){
             print ("\n Error predicting \n")
           }else{
             ## save the median prediction
 
-            df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
-        df.all.predictions$j_cell <- hpms.subset[sim.set,'j_cell']
-        df.all.predictions$geom_id <- hpms.subset[sim.set,'geo_id']
-
-            df.all.predictions[,variable] <- grid.pred$Median
+            ##> dim(grid.pred$Median)
+            ##[1] 745  86
+            for(sim.site in 1:(length(some.picked))){
+              df.all.predictions[[sim.site]][,variable] <- grid.pred$Median[,sim.site]
+            }
+          }
+          grid.pred <- list()
+        }
+        gc()
+        if(dim(df.all.predictions[[1]])[2]>4){
+          ## now dump that back into couchdb
+          for(sim.site in 1:(length(some.picked))){
+            rnm = names(df.all.predictions[[sim.site]])
+            names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
+            couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
           }
         }
-        if(dim(df.all.predictions)[2]>4){
-          ## now dump that back into couchdb
-          rnm = names(df.all.predictions)
-          names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-          couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions,local=TRUE,makeJSON=dumpPredictionsToJSON)
-        }
-      } ## loop to the next grid cell
-    }## loop to the next batch
-  }
-}
+      }
+    } ## loop to the next grid cell
+  }## loop to the next batch
 }

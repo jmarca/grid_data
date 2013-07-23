@@ -8,7 +8,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
   group.loop <- function(index,picked,hpms.subset,var.models){
     num.runs <- max(index)
     for(group in 1:num.runs){
-
+      print(paste('group',group,'of',num.runs))
       some.picked <- picked[index==group]
       df.pred.grid <- hpms.subset[some.picked,]
       ## df.pred.grid <- hpms.subset[picked,]
@@ -23,6 +23,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
       for(variable in names(var.models)){
         ## model
+        print(paste(variable,': group',group,'of',num.runs))
         post.gp.fit <- var.models[[variable]]
         grid.pred <- list()
         gc()

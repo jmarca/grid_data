@@ -168,7 +168,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
         ## at 11175 batch.idx, 90 cells, hit RAM 95%, so keep that ratio
         ## shy by 4.5GB, tweak lower
-        num.cells = 90 ## ceiling(80 * 11000 / length(batch.idx))
+        num.cells = min( 90, ceiling(80 * 11000 / length(batch.idx)))
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         done.runs <- FALSE
         while(!done.runs){

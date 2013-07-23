@@ -168,7 +168,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
         ## at 11175 batch.idx, 90 cells, hit RAM 95%, so keep that ratio
         ## shy by 4.5GB, tweak lower
-        num.cells = ceiling(80 * 11000 / length(batch.idx))
+        num.cells = 90 ## ceiling(80 * 11000 / length(batch.idx))
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         done.runs <- FALSE
         while(!done.runs){
@@ -177,7 +177,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
           runs.result <- try (group.loop(index,picked,hpms.subset,var.models))
           if(class(runs.result) == "try-error"){
             print ("\n Error predicting, try more groups \n")
-            num.runs <- num.runs + 2  ## I used to have +1, but why?
+            num.runs <- num.runs + 1
           }else{
             done.runs = TRUE
           }

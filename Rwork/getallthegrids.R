@@ -143,20 +143,20 @@ runme <- function(){
 
   ## want clusters of about 20 ... 50 is too big if a cluster is too
   ## big, will split later into half the time period
-  numclust = ceiling(dim(df.grid)[1] / 20)
-  if(numclust > 5) numclust = 5
-  print(paste('numclust is ',numclust,'dims is',dim(df.grid)[1]))
-  cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
+  ## numclust = ceiling(dim(df.grid)[1] / 20)
+  ## if(numclust > 5) numclust = 5
+  ## print(paste('numclust is ',numclust,'dims is',dim(df.grid)[1]))
+  ## cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))
   print(paste('processing',basin,year))
-  for(cl.i in 1:numclust){
-    idx <- cl$clustering==cl.i
+  ##  for(cl.i in 1:numclust){
+  ##    idx <- cl$clustering==cl.i
+    idx = rep_len(TRUE,length(df.grid[,1]))
     hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
     for(month in months){
-      print(month)
       monthloop(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=TRUE)
     }
-  }
+  ##  }
 }
 runme()

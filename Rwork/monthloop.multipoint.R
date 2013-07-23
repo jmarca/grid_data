@@ -177,7 +177,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
           runs.result <- try (group.loop(index,picked,hpms.subset,var.models))
           if(class(runs.result) == "try-error"){
             print ("\n Error predicting, try more groups \n")
-            num.runs <- num.runs + 1
+            num.runs <- num.runs + 2  ## I used to have +1, but why?
           }else{
             done.runs = TRUE
           }

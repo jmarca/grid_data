@@ -81,6 +81,8 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
     if(checkday<10) checkday <- paste('0',checkday,sep='')
     checkmonth <- df.data$month[1] + 1 ## month is one less than month
     if(checkmonth < 10) checkmonth <- paste('0',checkmonth,sep='')
+    ## form date part of checking URL for couchdb
+    couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00%3A00",sep='%20')
     print(paste('checking',couch.test.date))
 
     ## set up hpms grid cells to check, maybe process
@@ -168,4 +170,13 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
 
     }
 
+}
+
+
+split.data.by.day <- function(df.data,df.hpms.grids,month){
+     drop <- df.data$month==month
+     d_ply(df.data[!drop,],.(day),
+           function(d){
+               data.model.and.predict(d,df.hpms.grids)
+           })
 }

@@ -49,6 +49,13 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         for(sim.site in 1:(length(some.picked))){
           rnm = names(df.all.predictions[[sim.site]])
           names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
+
+          ## I want to model with an hour more and less on the day, to
+          ## avoid edge effects, but I want to save just the day, and
+          ## dump the pre and post hour
+
+          FIXME
+
           couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
         }
       }
@@ -89,6 +96,16 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
     ## this is horrible code that needs to be fixed, but I just want to move on
 
     usethese <- list(1:dim(df.data)[1])
+
+    ## right here split this into one group per day
+
+    ## I want to split each month into days, with an additional hour
+    ## pre and post each day, so that the model avoids boundary
+    ## effects.
+    ##
+    ## but I need to get done this year!
+    ##
+    ## split on month, day
 
     if( dim(df.data)[1] > 11000 ){ ## at 11175 and 90 cells, hit ram limit of 95%
                                         # split into halves
@@ -136,9 +153,10 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         ## just assign frac to hpms cells
         for(sim.set in picked){
           df.pred.grid <- hpms.subset[sim.set,]
-          couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-          test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-          if('error' %in% names(test.doc.json) ){
+          ## this following test seems redundant
+          ##couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+          ##test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
+          ##if('error' %in% names(test.doc.json) ){
             print(paste('processing',couch.test.doc))
             df.all.predictions <- data.frame('ts'= ts.ts)
             df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
@@ -155,7 +173,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
               save.these = ! is.na(df.all.predictions$n)
               couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
             }
-          }
+          ##}
         }
       }else{
         ## more than one cell, need to model, can't just copy

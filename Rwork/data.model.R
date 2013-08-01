@@ -69,13 +69,14 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
 data.model.and.predict <- function(df.data,df.hpms.grids){
 
     ## handle time from df.data
-    ts.un <- sort(unique(df.data$ts2))
+    ts2 <- strptime(df.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
+    ts.un <- sort(unique(ts2))
     ts.ct <- sort(unique(df.data$tsct))
     ts.ts = sort(unique(df.data$ts))
     n.times = length(ts.un)
 
     ## set up date to check if data in couchdb for hpms grid
-    checkday <- min(df.data$day)+1
+    checkday <- min(df.data$day)
     if(checkday<10) checkday <- paste('0',checkday,sep='')
     checkmonth <- df.data$month[1] + 1 ## month is one less than month
     if(checkmonth < 10) checkmonth <- paste('0',checkmonth,sep='')
@@ -148,13 +149,17 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
         ## num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         num.runs=1
         print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
+        group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
+      }
+  }
         ## done.runs <- FALSE
         ## while(!done.runs){
 
             ## index=rep_len(1:num.runs,length=length(picked))
 
             ##runs.result <- try (
-                group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
+
+            ##group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
             ##    )
                 ## d_ply(data.frame(picked=picked,group=index),'group',
                 ##       function(pick.group){
@@ -169,9 +174,9 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
             ##}
         ##}
 
-    }
+##     }
 
-}
+## }
 
 
 split.data.by.day <- function(df.data,df.hpms.grids,month){

@@ -143,46 +143,42 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
                                 data.model(df.data,formula=formula(paste(variable,1,sep='~')))
                             })
         gc()
-        group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
+        ## need to limit...can be 300+, eats up too much RAM
+        ## group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
 
-        ## num.cells = 30 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
-        ## num.runs = ceiling(length(picked)/num.cells) ## manage RAM
-        num.runs=1
+        num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+        num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
-        group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
-      }
-  }
-        ## done.runs <- FALSE
-        ## while(!done.runs){
 
-            ## index=rep_len(1:num.runs,length=length(picked))
+        done.runs <- FALSE
+        while(!done.runs){
 
-            ##runs.result <- try (
+            runs.index <- rep_len(1:num.runs,length=length(picked))
 
-            ##group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
-            ##    )
-                ## d_ply(data.frame(picked=picked,group=index),'group',
-                ##       function(pick.group){
-                ##           group.loop(df.hpms.grids[pick.group$picked,],var.models,ts.ts,ts.un)
-                ##       })
-                ## )
-            ##if(class(runs.result) == "try-error"){
-            ##    print ("\n Error predicting, try more groups \n")
-            ##    num.runs <- num.runs + 1
-            ##}else{
-            ##    done.runs = TRUE
-            ##}
-        ##}
+            runs.result <- try (
+                d_ply(df.hpms.grids,runs.index,group.loop,var.models,ts.ts,ts.un)
+                )
+            if(class(runs.result) == "try-error"){
+                print ("\n Error predicting, try more groups \n")
+                num.runs <- num.runs + 2
+            }else{
+                done.runs = TRUE
+            }
+        }
 
-##     }
+    }
 
-## }
+}
 
+
+library(doMC)
+registerDoMC()
 
 split.data.by.day <- function(df.data,df.hpms.grids,month){
      drop <- df.data$month==month
-     d_ply(df.data[!drop,],.(day),
-           function(d){
-               data.model.and.predict(d,df.hpms.grids)
-           })
+     d_ply(df.data[!drop], .(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages='spTimer'), df.hpms.grids)
+
+
+     # d_ply(df.data[!drop,],.(day),data.model.and.predict,df.hpms.grids)
+
 }

@@ -115,6 +115,9 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
       usethese = list(batch1,batch2)
     }
 
+## do not use this
+
+    die die die
     for(batch.idx in usethese){
       batch <- df.data[batch.idx,]
 

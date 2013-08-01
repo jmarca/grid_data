@@ -9,32 +9,32 @@ data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
 
 ## to call from plyr, one ply per model
-
-data.predict <- function(model,df.pred.grid,ts.un){
-  n.sites <- length(df.pred.grid[,1])
-  df.pred.grid$s.idx <- 1:n.sites
-
-  ts.psx <- as.POSIXct(ts.un)
-
-  n.times <- length(ts.un)
-  dat.mrg <- matrix(NA,n.sites*n.times,8)
-  dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
-  dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
-  dat.mrg[,3] <- rep(ts.un$mon,n.sites)
-  dat.mrg[,4] <- rep(ts.un$mday,n.sites)
-  dat.mrg[,5] <- rep(ts.un$hour,n.sites)
-  dat.mrg[,6] <- rep(ts.psx,n.sites)
-  dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
-  dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
-  dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
-  df.mrg <- as.data.frame(dat.mrg)
-  df.mrg$n.aadt.frac <- NA
-  df.mrg$hh.aadt.frac <- NA
-  df.mrg$hh.aadt.frac <- NA
-  df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
-  grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  print(grid.coords)
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
+data.predict.generator <- function(df.pred.grid,ts.un){
+    n.sites <- length(df.pred.grid[,1])
+    df.pred.grid$s.idx <- 1:n.sites
+    ts.psx <- as.POSIXct(ts.un)
+    n.times <- length(ts.un)
+    return (function(model){
+        gc()
+        dat.mrg <- matrix(NA,n.sites*n.times,8)
+        dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
+        dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
+        dat.mrg[,3] <- rep(ts.un$mon,n.sites)
+        dat.mrg[,4] <- rep(ts.un$mday,n.sites)
+        dat.mrg[,5] <- rep(ts.un$hour,n.sites)
+        dat.mrg[,6] <- rep(ts.psx,n.sites)
+        dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
+        dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
+        dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+        df.mrg <- as.data.frame(dat.mrg)
+        df.mrg$n.aadt.frac <- NA
+        df.mrg$hh.aadt.frac <- NA
+        df.mrg$hh.aadt.frac <- NA
+        df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
+        grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+        print(grid.coords)
+        predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
+    })
 }
 
 
@@ -49,18 +49,16 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
         df.all.predictions[[sim.site]]$geom_id <- df.pred.grid[sim.site,'geo_id']
     }
 
-    predictions <- llply(var.models,function(model){
-        data.predict(model,df.pred.grid,ts.un)
-    })
+    predictions <- llply(var.models,data.predict.generator(df.pred.grid,ts.un))
 
     for(model.name in names(var.models)){
         grid.pred <- predictions[[model.name]]
-        for(sim.site in 1:(length(some.picked))){
+        for(sim.site in 1:(length(df.pred.grid[,1]))){
             df.all.predictions[[sim.site]][,model.name] <- grid.pred$Median[,sim.site]
         }
     }
     gc()
-    for(sim.site in 1:(length(some.picked))){
+    for(sim.site in 1:(length(df.pred.grid[,1]))){
         rnm = names(df.all.predictions[[sim.site]])
         names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
         couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
@@ -144,29 +142,32 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
                                 data.model(df.data,formula=formula(paste(variable,1,sep='~')))
                             })
         gc()
+        group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
 
-        num.cells = 30 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
-        num.runs = ceiling(length(picked)/num.cells) ## manage RAM
+        ## num.cells = 30 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+        ## num.runs = ceiling(length(picked)/num.cells) ## manage RAM
+        num.runs=1
         print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
-        done.runs <- FALSE
-        while(!done.runs){
+        ## done.runs <- FALSE
+        ## while(!done.runs){
 
-            index=rep_len(1:num.runs,length=length(picked))
+            ## index=rep_len(1:num.runs,length=length(picked))
 
-            runs.result <- try (
-                d_ply(data.frame(picked=picked,group=index),'group',
-                      function(pick.group){
-                          group.loop(df.hpms.grids[pick.group$picked,],var.models,ts.ts,ts.un)
-                      })
-                )
-            if(class(runs.result) == "try-error"){
-                print ("\n Error predicting, try more groups \n")
-                num.runs <- num.runs + 1
-            }else{
-                done.runs = TRUE
-            }
-
-        }
+            ##runs.result <- try (
+                group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
+            ##    )
+                ## d_ply(data.frame(picked=picked,group=index),'group',
+                ##       function(pick.group){
+                ##           group.loop(df.hpms.grids[pick.group$picked,],var.models,ts.ts,ts.un)
+                ##       })
+                ## )
+            ##if(class(runs.result) == "try-error"){
+            ##    print ("\n Error predicting, try more groups \n")
+            ##    num.runs <- num.runs + 1
+            ##}else{
+            ##    done.runs = TRUE
+            ##}
+        ##}
 
     }
 

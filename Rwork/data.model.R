@@ -68,7 +68,7 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
 }
 
 ## send a chunk of data to this function
-data.model.and.predict <- function(df.data,df.hpms.grids){
+data.model.and.predict <- function(df.data,df.hpms.grids,year){
 
     ## handle time from df.data
     ts2 <- strptime(df.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
@@ -175,7 +175,7 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month,local){
     print (month)
     df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=local)
     drop <- df.data$month==month
-    d_ply(df.data[!drop,], .(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages=c('spTimer','plyr','RJSONIO','RCurl')), df.hpms.grids)
+    d_ply(df.data[!drop,], .(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages=c('spTimer','plyr','RJSONIO','RCurl')), df.hpms.grids,year)
 
 
     ## d_ply(df.data[!drop,],.(day),data.model.and.predict,df.hpms.grids)

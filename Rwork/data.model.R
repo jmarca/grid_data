@@ -153,13 +153,12 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
 
             runs.index <- rep_len(1:num.runs,length=length(picked))
             print (summary(runs.index))
-            stop()
             runs.result <- try (
                 d_ply(df.hpms.grids,runs.index,group.loop,var.models,ts.ts,ts.un)
                 )
             if(class(runs.result) == "try-error"){
                 print ("\n Error predicting, try more groups \n")
-                num.runs <- num.runs + 2
+                stop()
             }else{
                 done.runs = TRUE
             }

@@ -1,3 +1,5 @@
+library(doMC)
+registerDoMC()
 
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
@@ -114,10 +116,6 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
         ## just assign frac to hpms cells
         for(sim.set in picked){
             df.pred.grid <- df.hpms.grids[sim.set,]
-            ## this following test seems redundant
-            ##couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-            ##test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-            ##if('error' %in% names(test.doc.json) ){
             print(paste('processing',couch.test.doc))
             df.all.predictions <- data.frame('ts'= ts.ts)
             df.all.predictions$i_cell <- df.hpms.grids[sim.set,'i_cell']
@@ -154,7 +152,8 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
         while(!done.runs){
 
             runs.index <- rep_len(1:num.runs,length=length(picked))
-
+            print (summary(runs.index))
+            stop()
             runs.result <- try (
                 d_ply(df.hpms.grids,runs.index,group.loop,var.models,ts.ts,ts.un)
                 )
@@ -171,14 +170,14 @@ data.model.and.predict <- function(df.data,df.hpms.grids){
 }
 
 
-library(doMC)
-registerDoMC()
 
-split.data.by.day <- function(df.data,df.hpms.grids,month){
-     drop <- df.data$month==month
-     d_ply(df.data[!drop], .(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages='spTimer'), df.hpms.grids)
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,local){
+    print (month)
+    df.data <- get.raft.of.grids(df.grid,month=month,year=year,local=local)
+    drop <- df.data$month==month
+    d_ply(df.data[!drop,], .(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages=c('spTimer','plyr','RJSONIO','RCurl')), df.hpms.grids)
 
 
-     # d_ply(df.data[!drop,],.(day),data.model.and.predict,df.hpms.grids)
+    ## d_ply(df.data[!drop,],.(day),data.model.and.predict,df.hpms.grids)
 
 }

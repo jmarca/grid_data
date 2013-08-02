@@ -1,8 +1,7 @@
 source('./fetchFiles.R')
 
 ## get all the grids in a county
-library('cclust')
-
+library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 ## requires environment variables be set externally
@@ -107,7 +106,6 @@ process.grids <- function(df.grid){
 
 }
 
-library(cluster)
 
 hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
@@ -129,7 +127,7 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
-source('./monthloop.multipoint.R')
+source('./data.model.R')
 runme <- function(){
 
   gridenv = Sys.getenv(c("AIRBASIN"))
@@ -152,11 +150,9 @@ runme <- function(){
   print(paste('processing',basin,year))
   ##  for(cl.i in 1:numclust){
   ##    idx <- cl$clustering==cl.i
-    idx = rep_len(TRUE,length(df.grid[,1]))
-    hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
     for(month in months){
-      monthloop(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=TRUE)
+      process.data.by.day(df.grid,df.hpms.grids,year,month,local=TRUE)
     }
   ##  }
 }
-runme()
+##runme()

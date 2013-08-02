@@ -1,4 +1,7 @@
-## this is sourced in getallthegrids.R, **inside** of the "runme"
+### Deprecated, do not use
+
+/**
+    ## this is sourced in getallthegrids.R, **inside** of the "runme"
 ## loop.  for month in months source ./monthloop.R.  So this really is
 ## run, once per month
 
@@ -211,3 +214,4 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
     }## loop to the next batch
   } ## no data if statement
 }
+*/

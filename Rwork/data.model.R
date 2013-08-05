@@ -102,16 +102,18 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
         test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
         if('error' %in% names(test.doc.json) ){
             hpmstodo[cell] <- TRUE  ##true means need to do this document
+            print(paste('need to do',couch.test.doc))
         } else {
             hpmstodo[cell] <- FALSE ##false means doc is dropped from index
         }
     }
-    print(length(picker[hpmstodo]))
     if(length(picker[hpmstodo])<1){
         return ()
     }
     picked = picker[hpmstodo]
+    print(df.hpms.grids[picked,])
     if(length(picked)>1)    picked = sample(picked) ## randomly permute
+
     if(length(unique(df.data$s.idx))<2){
         ## just assign frac to hpms cells
         for(sim.set in picked){
@@ -136,6 +138,7 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
             }
         }
     }else{
+        df.pred.grid <- df.hpms.grids[picked,] ## the grid cells I need to predict
         var.models <- llply(list('n.aadt.frac'='n.aadt.frac',
                                  'hh.aadt.frac' ='hh.aadt.frac',
                                  'nhh.aadt.frac'='nhh.aadt.frac'),
@@ -154,9 +157,8 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
         while(!done.runs){
 
             runs.index <- rep_len(1:num.runs,length=length(picked))
-            print (summary(runs.index))
             runs.result <- try (
-                d_ply(df.hpms.grids,.(runs.index),group.loop,var.models,ts.ts,ts.un)
+                d_ply(df.pred.grid,.(runs.index),group.loop,var.models,ts.ts,ts.un)
                 )
             if(class(runs.result) == "try-error"){
                 print ("\n Error predicting, try more groups? \n")

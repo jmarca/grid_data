@@ -58,6 +58,7 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   }
   bulkdocs <- gsub('} {',',',x=paste(num.data,text.data,collapse=','),perl=TRUE)
   if(bulk){  bulkdocs <- paste('{"docs":[',bulkdocs,']}') }
+  print(bulkdocs)
   bulkdocs
 }
 

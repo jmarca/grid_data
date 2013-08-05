@@ -130,6 +130,8 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
                 rnm = names(df.all.predictions)
                 names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
                 save.these = ! is.na(df.all.predictions$n)
+                print('save.these is')
+                print(summary(save.these))
                 couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
             }
         }
@@ -144,7 +146,7 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
         ## need to limit...can be 300+, eats up too much RAM
         ## group.loop(df.hpms.grids[picked,],var.models,ts.ts,ts.un)
 
-        num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+        num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 

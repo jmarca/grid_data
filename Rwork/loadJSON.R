@@ -37,6 +37,7 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   if( ! '_id' %in% names(chunk) ){
     chunk[,'_id']=paste(chunk$geom_id,chunk$ts,sep='_')
   }
+  print(paste(chunk[,'_id']))
   colnames <- names(chunk)
   text.cols    <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE)
   numeric.cols <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE,invert=TRUE)
@@ -58,7 +59,6 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   }
   bulkdocs <- gsub('} {',',',x=paste(num.data,text.data,collapse=','),perl=TRUE)
   if(bulk){  bulkdocs <- paste('{"docs":[',bulkdocs,']}') }
-  print(bulkdocs)
   bulkdocs
 }
 

@@ -1,8 +1,7 @@
 source('./fetchFiles.R')
 
 ## get all the grids in a county
-library('cclust')
-
+library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 ## requires environment variables be set externally
@@ -107,7 +106,6 @@ process.grids <- function(df.grid){
 
 }
 
-library(cluster)
 
 hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
@@ -129,7 +127,20 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
-source('./monthloop.multipoint.R')
+compute.manhattan.distance <- function(a,b){
+    abs(a$lat - b$lat) + abs(a$lon - b$lon)
+}
+
+assign.hpms.grid.cell <- function(centers){
+    assign.cell <- function(hpms.cell){
+        centers.distance <- ddply(centers,.(lat,lon,clustering),.fun=function(a){compute.manhattan.distance(a,hpms.cell)})
+        min.distance <- min(centers.distance$V1)
+        assigned.cluster <- centers.distance$clustering[min.distance==centers.distance$V1]
+        return(assigned.cluster[1]) ## prevent duplicates
+    }
+}
+
+source('./data.model.R')
 runme <- function(){
 
   gridenv = Sys.getenv(c("AIRBASIN"))
@@ -141,22 +152,22 @@ runme <- function(){
 
   months=1:12
 
-  ## want clusters of about 20 ... 50 is too big if a cluster is too
-  ## big, will split later into half the time period
+  ## want clusters of about 20
   numclust = ceiling(dim(df.grid)[1] / 20)
-  if(numclust > 5) numclust = 5
+  if(numclust > 10) numclust = 10
   print(paste('numclust is ',numclust,'dims is',dim(df.grid)[1]))
-  cl <- fanny(as.matrix(df.grid[,c('lon','lat')]),numclust)
-
+  cl <- clara(as.matrix(df.grid[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
+  centers <- as.data.frame(cl$medoids)
+  centers$clustering = cl$clustering[rownames(cl$medoids)]
+  assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))
   year = Sys.getenv(c("CARB_GRID_YEAR"))
   print(paste('processing',basin,year))
-  for(cl.i in 1:numclust){
-    idx <- cl$clustering==cl.i
-    hpms.in.range <- get.hpms.in.range(df.hpms.grids,df.grid[idx,],expand=1)
-    for(month in months){
-      print(month)
-      monthloop(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=TRUE)
-    }
+  for(month in months){
+      for(cl.i in 1:numclust){
+          grid.idx <- cl$clustering==cl.i
+          hpms.idx <- assign.cluster$V1==cl.i
+          process.data.by.day(df.grid[grid.idx,],assign.cluster[hpms.idx,],year,month,local=TRUE)
+      }
   }
 }
 runme()

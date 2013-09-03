@@ -1,4 +1,5 @@
 library(RJSONIO)
+library(plyr)
 
 parseImputeRecord <- function(rawjson){
   ## trim it down
@@ -12,7 +13,6 @@ parseImputeRecord <- function(rawjson){
   df[,3:17] <- apply(df[,3:17],2,as.numeric)
   df$dashts <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
 }
-library(plyr)
 default.header =c("ts","freeway","n","hh","not_hh","o","avg_veh_spd","avg_hh_weight","avg_hh_axles","avg_hh_spd","avg_nh_weight","avg_nh_axles","avg_nh_spd","miles","lane_miles","detector_count","detectors")
 parseGridRecord <- function(rawjson){
   ## trim it down
@@ -37,10 +37,11 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   if( ! '_id' %in% names(chunk) ){
     chunk[,'_id']=paste(chunk$geom_id,chunk$ts,sep='_')
   }
+  print(paste(chunk[,'_id']))
   colnames <- names(chunk)
   text.cols    <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE)
   numeric.cols <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE,invert=TRUE)
-  aadt.cols = grep(pattern="^(n|hh|nhh)",x=colnames[numeric.cols],perl=TRUE)  
+  aadt.cols = grep(pattern="^(n|hh|nhh)",x=colnames[numeric.cols],perl=TRUE)
   numeric.data.json <- function(row){
     cellvals = toJSON(row[c(1,2)],collapse='')
     aadtvals = toJSON(row[aadt.cols],collapse='')

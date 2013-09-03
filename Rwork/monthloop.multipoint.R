@@ -1,4 +1,7 @@
-## this is sourced in getallthegrids.R, **inside** of the "runme"
+### Deprecated, do not use
+
+/**
+    ## this is sourced in getallthegrids.R, **inside** of the "runme"
 ## loop.  for month in months source ./monthloop.R.  So this really is
 ## run, once per month
 
@@ -8,7 +11,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
   group.loop <- function(index,picked,hpms.subset,var.models){
     num.runs <- max(index)
     for(group in 1:num.runs){
-
+      print(paste('group',group,'of',num.runs))
       some.picked <- picked[index==group]
       df.pred.grid <- hpms.subset[some.picked,]
       ## df.pred.grid <- hpms.subset[picked,]
@@ -23,6 +26,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
       for(variable in names(var.models)){
         ## model
+        print(paste(variable,': group',group,'of',num.runs))
         post.gp.fit <- var.models[[variable]]
         grid.pred <- list()
         gc()
@@ -48,6 +52,13 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         for(sim.site in 1:(length(some.picked))){
           rnm = names(df.all.predictions[[sim.site]])
           names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
+
+          ## I want to model with an hour more and less on the day, to
+          ## avoid edge effects, but I want to save just the day, and
+          ## dump the pre and post hour
+
+          FIXME
+
           couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
         }
       }
@@ -89,6 +100,16 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
     usethese <- list(1:dim(df.data)[1])
 
+    ## right here split this into one group per day
+
+    ## I want to split each month into days, with an additional hour
+    ## pre and post each day, so that the model avoids boundary
+    ## effects.
+    ##
+    ## but I need to get done this year!
+    ##
+    ## split on month, day
+
     if( dim(df.data)[1] > 11000 ){ ## at 11175 and 90 cells, hit ram limit of 95%
                                         # split into halves
       maxday <- max(df.data$day)
@@ -97,6 +118,9 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
       usethese = list(batch1,batch2)
     }
 
+## do not use this
+
+    die die die
     for(batch.idx in usethese){
       batch <- df.data[batch.idx,]
 
@@ -135,9 +159,10 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
         ## just assign frac to hpms cells
         for(sim.set in picked){
           df.pred.grid <- hpms.subset[sim.set,]
-          couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-          test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-          if('error' %in% names(test.doc.json) ){
+          ## this following test seems redundant
+          ##couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+          ##test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
+          ##if('error' %in% names(test.doc.json) ){
             print(paste('processing',couch.test.doc))
             df.all.predictions <- data.frame('ts'= ts.ts)
             df.all.predictions$i_cell <- hpms.subset[sim.set,'i_cell']
@@ -154,7 +179,7 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
               save.these = ! is.na(df.all.predictions$n)
               couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
             }
-          }
+          ##}
         }
       }else{
         ## more than one cell, need to model, can't just copy
@@ -168,8 +193,10 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
 
         ## at 11175 batch.idx, 90 cells, hit RAM 95%, so keep that ratio
         ## shy by 4.5GB, tweak lower
-        num.cells = 90 ## ceiling(80 * 11000 / length(batch.idx))
+        ## going for 30 and running three jobs at once.  we'll see
+        num.cells = 30 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
+        print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
         done.runs <- FALSE
         while(!done.runs){
 
@@ -187,3 +214,4 @@ monthloop <- function(df.grid,month,year,df.hpms.grids,hpms.in.range,idx,local=F
     }## loop to the next batch
   } ## no data if statement
 }
+*/

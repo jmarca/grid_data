@@ -37,3 +37,8 @@ option to occupy all of your cores.  On others, the best option is -j
 the desired number of parallel jobs.  Usually the problem is that too
 much RAM is allocated for multiple jobs, so you want to cut back so as
 to not crash.
+
+### copy_to_couchdb.js
+
+This program will pull out grid files from the file system and then
+copy them into CouchDB.

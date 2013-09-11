@@ -59,10 +59,10 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     print(length(json.data$rows))
     df <- parseGridRecord(json.data)
     rm(json.data)
-    df$Latitude  <- df.grid.subset[i,'lat']
-    df$Longitude <- df.grid.subset[i,'lon']
-    df$i_cell <- df.grid.subset[i,'i_cell']
-    df$j_cell <- df.grid.subset[i,'j_cell']
+    ## df$Latitude  <- df.grid.subset[i,'lat']
+    ## df$Longitude <- df.grid.subset[i,'lon']
+    ## df$i_cell <- df.grid.subset[i,'i_cell']
+    ## df$j_cell <- df.grid.subset[i,'j_cell']
     df$s.idx <- i
     ## patch aadt onto df
     if(dim(df.bind)[1]==0){
@@ -80,26 +80,26 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     print('do posix')
     ts.psx <<- as.POSIXct(ts.un)
     print('done posix')
-    ## site.index <- sort(unique(df.bind$s.idx))
-    site.lat.lon <- ddply(df.bind,"s.idx",function(x){
-      x[1,c("s.idx","Latitude","Longitude")]
-    })
+
+    site.lat.lon <- unique(df.bind[,c('s.idx','i_cell','j_cell')])
     n <- length(ts.un)
     N <- length(site.lat.lon[,1])
-    dat.mrg <- matrix(NA,n*N,8)
+    dat.mrg <- matrix(NA,n*N,6)
     dat.mrg[,1] <- sort(rep(site.lat.lon$s.idx,each=n)) ## site number
     dat.mrg[,2] <- rep(ts.un$year,N)+1900
     dat.mrg[,3] <- rep(ts.un$mon,N)
     dat.mrg[,4] <- rep(ts.un$mday,N)
     dat.mrg[,5] <- rep(ts.un$hour,N)
     dat.mrg[,6] <- rep(ts.psx,N)
-    dat.mrg[,7] <- sort(rep(site.lat.lon$Longitude,each=n)) ## lon
-    dat.mrg[,8] <- sort(rep(site.lat.lon$Latitude,each=n)) ## lat
-    dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+    ##dat.mrg[,7] <- sort(rep(site.lat.lon$i_cell,each=n)) ## i_cell
+    ##dat.mrg[,8] <- sort(rep(site.lat.lon$j_cell,each=n)) ## j_cell
+    dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct')##,'i_cell','j_cell')
     df.mrg <- as.data.frame(dat.mrg)
-    df.bind$Longitude <- NULL
-    df.bind$Latitude <- NULL
-    df.mrg <- merge(df.mrg,df.bind,all=TRUE,by=c("s.idx","tsct"))
+    ## first, slap in the correct i_cell, j_cell, for every cell
+    df.mrg   <- merge(df.mrg,site.lat.lon  ,all=TRUE,by=c("s.idx",'i_cell','j_cell'))
+    df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
+    df.mrg <- merge(df.mrg,df.grid.subset,all=TRUE,by=c('i_cell','j_cell'))
+    names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }
   df.mrg
 }

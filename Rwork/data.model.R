@@ -31,9 +31,10 @@ data.predict.generator <- function(df.pred.grid,ts.un){
         df.mrg <- as.data.frame(dat.mrg)
         df.mrg$n.aadt.frac <- NA
         df.mrg$hh.aadt.frac <- NA
-        df.mrg$hh.aadt.frac <- NA
+        df.mrg$nhh.aadt.frac <- NA
         df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
-        grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+        # grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+        grid.coords<-as.matrix(unique(cbind(df.mrg$Longitude,df.mrg$Latitude)))
         print(grid.coords)
         predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
     })
@@ -153,21 +154,16 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
         num.runs = ceiling(length(picked)/num.cells) ## manage RAM
         print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
-        done.runs <- FALSE
-        while(!done.runs){
-
-            runs.index <- rep_len(1:num.runs,length=length(picked))
-            runs.result <- try (
-                d_ply(df.pred.grid,.(runs.index),group.loop,var.models,ts.ts,ts.un)
-                )
-            if(class(runs.result) == "try-error"){
-                print ("\n Error predicting, try more groups? \n")
-                print(runs.result)
-                stop()
-            }else{
-                done.runs = TRUE
-            }
+        runs.index <- rep_len(1:num.runs,length=length(picked))
+        runs.result <- try (
+            d_ply(df.pred.grid,.(runs.index),group.loop,var.models,ts.ts,ts.un)
+            )
+        if(class(runs.result) == "try-error"){
+            print ("\n Error predicting, try more groups? \n")
+            print(runs.result)
+            stop()
         }
+
 
     }
 

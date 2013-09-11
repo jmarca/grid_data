@@ -20,10 +20,12 @@ parseGridRecord <- function(rawjson){
   df <- ldply(rows,.fun=function(x){
     dd <- unlist(x$doc$data)[1:16]
     daadt <- unlist(x$doc$aadt_frac)
-    c(dd,daadt)
+    dicell <- unlist(x$doc$i_cell)
+    djcell <- unlist(x$doc$j_cell)
+    c(dd,daadt,dicell,djcell)
   })
-  names(df) <- c(default.header[1:16],'n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')
-  df[,3:19] <- apply(df[,3:19],2,as.numeric)
+  names(df) <- c(default.header[1:16],'n.aadt.frac','hh.aadt.frac','nhh.aadt.frac','i_cell','j_cell')
+  df[,3:21] <- apply(df[,3:21],2,as.numeric)
   df[,2] <- as.factor(df[,2])
   df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
   df$tsct <- as.POSIXct(df$ts2)

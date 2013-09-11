@@ -54,15 +54,15 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
                                           df.grid.subset[i,'j_cell'],
                                           start.date,
                                           end.date,
-                                          local=FALSE)
-    if('error' %in% names(json.data) || length(json.data$rows)==0) next
+                                          local=local)
+    if('error' %in% names(json.data) || length(json.data$rows)<2) next
     print(length(json.data$rows))
     df <- parseGridRecord(json.data)
     rm(json.data)
-    df$Latitude  <- df.grid.subset[i,'lat']
-    df$Longitude <- df.grid.subset[i,'lon']
-    df$i_cell <- df.grid.subset[i,'i_cell']
-    df$j_cell <- df.grid.subset[i,'j_cell']
+    ## df$Latitude  <- df.grid.subset[i,'lat']
+    ## df$Longitude <- df.grid.subset[i,'lon']
+    ## df$i_cell <- df.grid.subset[i,'i_cell']
+    ## df$j_cell <- df.grid.subset[i,'j_cell']
     df$s.idx <- i
     ## patch aadt onto df
     if(dim(df.bind)[1]==0){
@@ -80,61 +80,61 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     print('do posix')
     ts.psx <<- as.POSIXct(ts.un)
     print('done posix')
-    ## site.index <- sort(unique(df.bind$s.idx))
-    site.lat.lon <- ddply(df.bind,"s.idx",function(x){
-      x[1,c("s.idx","Latitude","Longitude")]
-    })
+
+    site.lat.lon <- unique(df.bind[,c('s.idx','i_cell','j_cell')])
     n <- length(ts.un)
     N <- length(site.lat.lon[,1])
-    dat.mrg <- matrix(NA,n*N,8)
+    dat.mrg <- matrix(NA,n*N,6)
     dat.mrg[,1] <- sort(rep(site.lat.lon$s.idx,each=n)) ## site number
     dat.mrg[,2] <- rep(ts.un$year,N)+1900
     dat.mrg[,3] <- rep(ts.un$mon,N)
     dat.mrg[,4] <- rep(ts.un$mday,N)
     dat.mrg[,5] <- rep(ts.un$hour,N)
     dat.mrg[,6] <- rep(ts.psx,N)
-    dat.mrg[,7] <- sort(rep(site.lat.lon$Longitude,each=n)) ## lon
-    dat.mrg[,8] <- sort(rep(site.lat.lon$Latitude,each=n)) ## lat
-    dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+    ##dat.mrg[,7] <- sort(rep(site.lat.lon$i_cell,each=n)) ## i_cell
+    ##dat.mrg[,8] <- sort(rep(site.lat.lon$j_cell,each=n)) ## j_cell
+    dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct')##,'i_cell','j_cell')
     df.mrg <- as.data.frame(dat.mrg)
-    df.bind$Longitude <- NULL
-    df.bind$Latitude <- NULL
-    df.mrg <- merge(df.mrg,df.bind,all=TRUE,by=c("s.idx","tsct"))
+    ## first, slap in the correct i_cell, j_cell, for every cell
+    df.mrg   <- merge(df.mrg,site.lat.lon  ,all=TRUE,by=c("s.idx",'i_cell','j_cell'))
+    df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
+    df.mrg <- merge(df.mrg,df.grid.subset,all=TRUE,by=c('i_cell','j_cell'))
+    names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }
   df.mrg
 }
 
-data.model <- function(df.mrg,formula=n.aadt.frac~1){
+## data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
-  site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.005,distance.method="geodetic:km",report=10,scale.transform="SQRT")
-  post.gp.fit
+##   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+##   post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.005,distance.method="geodetic:km",report=10,scale.transform="SQRT")
+##   post.gp.fit
 
-}
+## }
 
-data.predict <- function(model,df.pred.grid,ts.un){
-  n.sites <- length(df.pred.grid[,1])
-  df.pred.grid$s.idx <- 1:n.sites
+## data.predict <- function(model,df.pred.grid,ts.un){
+##   n.sites <- length(df.pred.grid[,1])
+##   df.pred.grid$s.idx <- 1:n.sites
 
-  ts.psx <- as.POSIXct(ts.un)
+##   ts.psx <- as.POSIXct(ts.un)
 
-  n.times <- length(ts.un)
-  dat.mrg <- matrix(NA,n.sites*n.times,8)
-  dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
-  dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
-  dat.mrg[,3] <- rep(ts.un$mon,n.sites)
-  dat.mrg[,4] <- rep(ts.un$mday,n.sites)
-  dat.mrg[,5] <- rep(ts.un$hour,n.sites)
-  dat.mrg[,6] <- rep(ts.psx,n.sites)
-  dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
-  dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
-  dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
-  df.mrg <- as.data.frame(dat.mrg)
-  df.mrg$n.aadt.frac <- NA
-  df.mrg$hh.aadt.frac <- NA
-  df.mrg$hh.aadt.frac <- NA
-  df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
-  grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  print(grid.coords)
-  grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
-}
+##   n.times <- length(ts.un)
+##   dat.mrg <- matrix(NA,n.sites*n.times,8)
+##   dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
+##   dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
+##   dat.mrg[,3] <- rep(ts.un$mon,n.sites)
+##   dat.mrg[,4] <- rep(ts.un$mday,n.sites)
+##   dat.mrg[,5] <- rep(ts.un$hour,n.sites)
+##   dat.mrg[,6] <- rep(ts.psx,n.sites)
+##   dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
+##   dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
+##   dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+##   df.mrg <- as.data.frame(dat.mrg)
+##   df.mrg$n.aadt.frac <- NA
+##   df.mrg$hh.aadt.frac <- NA
+##   df.mrg$hh.aadt.frac <- NA
+##   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
+##   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+##   print(grid.coords)
+##   grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
+## }

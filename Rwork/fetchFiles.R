@@ -96,8 +96,11 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct')##,'i_cell','j_cell')
     df.mrg <- as.data.frame(dat.mrg)
     ## first, slap in the correct i_cell, j_cell, for every cell
-    df.mrg   <- merge(df.mrg,site.lat.lon  ,all=TRUE,by=c("s.idx",'i_cell','j_cell'))
+    print('adding i_cell, j_cell back in')
+    df.mrg   <- merge(df.mrg,site.lat.lon  ,all=TRUE,by=c("s.idx"))
+    print('merging data from couchdb')
     df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
+    print('merging Lat, Lon')
     df.mrg <- merge(df.mrg,df.grid.subset,all=TRUE,by=c('i_cell','j_cell'))
     names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }

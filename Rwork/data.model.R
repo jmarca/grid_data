@@ -88,7 +88,7 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
     print(paste('checking',couch.test.date))
 
     ## set up hpms grid cells to check, maybe process
-    geoids <- sort(unique(paste(df.data$i_cell, df.data$j_cell,'_')))
+    geoids <- df.data$geo_id ## sort(unique(paste(df.data$i_cell, df.data$j_cell,'_')))
     overlap <- df.hpms.grids$geo_id %in% geoids
     df.hpms.grids <- df.hpms.grids[!overlap,]
 

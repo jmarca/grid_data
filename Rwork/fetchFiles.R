@@ -37,7 +37,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
 }
 
 get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
-  print(month)
+
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
   ## make a start and end date
@@ -101,7 +101,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     print('merging data from couchdb')
     df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
     print('merging Lat, Lon')
-    df.mrg <- merge(df.mrg,df.grid.subset,all=TRUE,by=c('i_cell','j_cell'))
+    df.mrg <- merge(df.mrg,df.grid.subset,all.x=TRUE,all.y=FALSE,by=c('i_cell','j_cell'))
     names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }
   df.mrg

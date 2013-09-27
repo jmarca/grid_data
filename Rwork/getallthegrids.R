@@ -143,6 +143,7 @@ assign.hpms.grid.cell <- function(centers){
 source('./data.model.R')
 runme <- function(){
 
+  year = Sys.getenv(c("CARB_GRID_YEAR"))
   gridenv = Sys.getenv(c("AIRBASIN"))
   basin = gridenv[1]
   df.grid <- get.grids.with.detectors(basin)
@@ -165,7 +166,6 @@ runme <- function(){
       centers <- as.data.frame(cl$medoids)
       centers$clustering = cl$clustering[rownames(cl$medoids)]
       assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))
-      year = Sys.getenv(c("CARB_GRID_YEAR"))
       print(paste('processing',basin,year))
 
       for(cl.i in 1:numclust){

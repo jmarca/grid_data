@@ -155,7 +155,7 @@ runme <- function(){
   for(month in months){
 
       ## cluster **ONLY** the grid cells with valid data
-      data.count <- get.rowcount.of.grids(df.grid,month=month,year=year,local=local)
+      data.count <- get.rowcount.of.grids(df.grid,month=month,year=year,local=TRUE)
       df.grid.data <- df.grid[data.count>0,]
 
       ## want clusters of about 20

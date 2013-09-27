@@ -5,18 +5,15 @@ library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 ## requires environment variables be set externally
-psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS"))
+psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS","PSQL_PORT"))
+psql.port = psqlenv[4] || 5432
 
 spatialvds.con <-  dbConnect(m
                   ,user=psqlenv[2]
                   ,password=psqlenv[3]
                   ,host=psqlenv[1]
+                             ,port=psql
                   ,dbname="spatialvds")
-osm.con <-  dbConnect(m
-                  ,user=psqlenv[2]
-                  ,password=psqlenv[3]
-                  ,host=psqlenv[1]
-                  ,dbname="osm")
 
 get.all.the.grids <- function(basin){
   ## assume area is a county for now
@@ -92,7 +89,7 @@ grid.query <- paste(grid.with
                     ," group by i_cell,j_cell,lon,lat"
                     ,sep='')
   print(grid.query)
-  rs <- dbSendQuery(osm.con,grid.query)
+  rs <- dbSendQuery(spatialvds.con,grid.query)
   df.grid <- fetch(rs,n=-1)
   df.grid
 }

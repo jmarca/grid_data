@@ -10,7 +10,7 @@ get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
    load.remote.file(server,service='grid',root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
 }
 
-get.grid.file.from.couch <- function(i,j,start,end,local=TRUE){
+get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE){
 
   start.date.part <- start
   end.date.part <-  end
@@ -23,7 +23,7 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE){
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
     )
-  json <- couch.allDocs(grid.couch.db , query=query, local=local)
+  json <- couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs)
   return(json)
 }
 
@@ -105,6 +105,32 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }
   df.mrg
+}
+
+
+get.rowcount.of.grids <- function(df.grid.subset,year,month,local=TRUE){
+
+  ## df.grid.subset has a bunch of grids to get
+  ## i_cell, j_cell
+  ## make a start and end date
+  month.padded=paste(month)
+  if(month<10) month.padded=paste('0',month,sep='')
+  start.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
+  month.padded=paste(month+1)
+  if(month+1<10) month.padded=paste('0',month+1,sep='')
+  end.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
+  df.grid.subset$rows <- 0
+  for(i in 1:length(df.grid.subset[,1])){
+    json.data <- get.grid.file.from.couch(df.grid.subset[i,'i_cell'],
+                                          df.grid.subset[i,'j_cell'],
+                                          start.date,
+                                          end.date,
+                                          local=local,
+                                          include.docs=FALSE)
+    if('error' %in% names(json.data) || length(json.data$rows)<2) next
+    df.grid.subset$rows[i] <- length(json.data$rows)
+  }
+  df.grid.subset$rows
 }
 
 ## data.model <- function(df.mrg,formula=n.aadt.frac~1){

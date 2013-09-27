@@ -6,13 +6,16 @@ library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 ## requires environment variables be set externally
 psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS","PSQL_PORT"))
-psql.port = psqlenv[4] || 5432
+psql.port = psqlenv[4]
+if(is.na(psql.port)){
+  psql.port=5432
+}
 
 spatialvds.con <-  dbConnect(m
                   ,user=psqlenv[2]
                   ,password=psqlenv[3]
                   ,host=psqlenv[1]
-                             ,port=psql
+                  ,port=psql.port
                   ,dbname="spatialvds")
 
 get.all.the.grids <- function(basin){

@@ -41,7 +41,35 @@ to not crash.
 ### copy_to_couchdb.js
 
 This program will pull out grid files from the file system and then
-copy them into CouchDB.
+copy them into CouchDB.  It also computes the AADT for each grid, and
+saves as part of the save.
+
+### `couch_file.js`
+
+
+### `find.js`
+
+Lame dead end, commented out.
+
+### `check_file.js`
+
+### `grab_geom.js`
+
+Heads off to PostgreSQL to grab a particular grid cell's information
+and geometry.  The results get stashed in the `task` object under
+`task.grid`, and then the callback gets called with the modified
+`task` object.
+
+### `grid_topology.js`
+
+This module will connect to PostgreSQL, load grids as specified, and
+save to CouchDB as a topojson topology object.
+
+### `read_file.js`
+
+Used in the program flow.  Will read the file located at `task.file`,
+parse the file as JSON, and save it in the `task` object as
+`task.data`, then call the callback with the modified `task` object.
 
 ## Rwork
 

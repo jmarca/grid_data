@@ -10,6 +10,9 @@ get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
    load.remote.file(server,service='grid',root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
 }
 
+# one connection per thread
+couchdb.handle = getCurlHandle()
+
 get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE){
 
   start.date.part <- start
@@ -23,7 +26,7 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE)
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
     )
-  json <- couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs)
+  json <- couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs, h=couchdb.handle)
   return(json)
 }
 
@@ -32,7 +35,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-  json <- couch.get(grid.couch.db , docname=doc, local=local)
+  json <- couch.get(grid.couch.db , docname=doc, local=local, h=couchdb.handle)
   return(json)
 }
 

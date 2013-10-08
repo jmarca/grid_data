@@ -68,6 +68,45 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
     }
 }
 
+
+
+couch.allDocsPost <- function(db, keys, view='_all_docs', include.docs = TRUE, local=TRUE, h=getCurlHandle()){
+
+  if(length(db)>1){
+    db <- couch.makedbname(db)
+  }
+  cdb <- localcouchdb
+  if(!local){
+    cdb <- couchdb
+  }
+  ## docname <- '_all_docs'
+  uri <- paste(cdb,db,view,sep="/");
+##   print(uri)
+  k <- paste('{"keys":["',
+             paste(keys,collapse='","'),
+             '"]}',sep='')
+  print (k)
+
+  if(include.docs){
+      uri <- paste(uri,'include_docs=true',sep='?')
+      ## }else{
+      ##   q <- paste(q,sep='&')
+  }
+  print (uri)
+  reader <- basicTextGatherer()
+  curlPerform(
+              url = uri
+              ,customrequest = "POST"
+              ,httpheader = c('Content-Type'='application/json')
+              ,postfields = k
+              ,writefunction = reader$update
+              ,curl=h
+              )
+  fromJSON(reader$value()[[1]],simplify=FALSE)
+}
+
+
+
 ## send a chunk of data to this function
 data.model.and.predict <- function(df.data,df.hpms.grids,year){
 
@@ -84,7 +123,10 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
     checkmonth <- df.data$month[1] + 1 ## month is one less than month
     if(checkmonth < 10) checkmonth <- paste('0',checkmonth,sep='')
     ## form date part of checking URL for couchdb
-    couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00%3A00",sep='%20')
+
+    # couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00%3A00",sep='%20')
+    couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00:00",sep=' ')
+
     print(paste('checking',couch.test.date))
 
     ## set up hpms grid cells to check, maybe process
@@ -95,19 +137,32 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
     ## loop over hpms cells,  and simulate what should be there
     simlim <- length(df.hpms.grids[,1])
     picker <- 1:simlim
-    hpmstodo <- picker > 0
+    df.pred.keys <- (df.hpms.grids[picker,])$geo_id
+
+    couch.test.docs <- paste(df.pred.keys,couch.test.date,sep='_')
+
+    result = couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local,h=couchdb.handle)
+    rows = result$rows
+
+    hpmstodo <- picker < 0 # default false
     for(cell in picker){
-        ## abort if already done in couchdb
-        df.pred.grid <- df.hpms.grids[cell,]
-        couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-        test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE)
-        if('error' %in% names(test.doc.json) ){
-            hpmstodo[cell] <- TRUE  ##true means need to do this document
-            print(paste('need to do',couch.test.doc))
-        } else {
-            hpmstodo[cell] <- FALSE ##false means doc is dropped from index
-        }
+        row = rows[[cell]]
+    ##     ## construct a bulkdocs call
+    ##     ## abort if already done in couchdb
+    ##     df.pred.grid <- df.hpms.grids[cell,]
+    ##     couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
+
+    ##     ## print(getCurlInfo(couchdb.handle))
+    ##     test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE, h=couchdb.handle)
+        if('error' %in% names(row)){
+    ##     if('error' %in% names(test.doc.json) ){
+             hpmstodo[cell] <- TRUE  ##true means need to do this document
+    ##         print(paste('need to do',couch.test.doc))
+    ##     } else {
+    ##         hpmstodo[cell] <- FALSE ##false means doc is dropped from index
+         }
     }
+
     if(length(picker[hpmstodo])<1){
         return ()
     }

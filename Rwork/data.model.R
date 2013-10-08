@@ -1,5 +1,5 @@
 library(doMC)
-registerDoMC()
+registerDoMC(3)
 
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
@@ -85,14 +85,11 @@ couch.allDocsPost <- function(db, keys, view='_all_docs', include.docs = TRUE, l
   k <- paste('{"keys":["',
              paste(keys,collapse='","'),
              '"]}',sep='')
-  print (k)
-
   if(include.docs){
       uri <- paste(uri,'include_docs=true',sep='?')
       ## }else{
       ##   q <- paste(q,sep='&')
   }
-  print (uri)
   reader <- basicTextGatherer()
   curlPerform(
               url = uri
@@ -108,7 +105,7 @@ couch.allDocsPost <- function(db, keys, view='_all_docs', include.docs = TRUE, l
 
 
 ## send a chunk of data to this function
-data.model.and.predict <- function(df.data,df.hpms.grids,year){
+data.model.and.predict <- function(df.data,df.hpms.grids,year,local=TRUE){
 
     ## handle time from df.data
     ts2 <- strptime(df.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
@@ -140,41 +137,30 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
     df.pred.keys <- (df.hpms.grids[picker,])$geo_id
 
     couch.test.docs <- paste(df.pred.keys,couch.test.date,sep='_')
-
-    result = couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local,h=couchdb.handle)
+    result = couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local)
     rows = result$rows
-
+    print(length(rows))
     hpmstodo <- picker < 0 # default false
     for(cell in picker){
         row = rows[[cell]]
-    ##     ## construct a bulkdocs call
-    ##     ## abort if already done in couchdb
-    ##     df.pred.grid <- df.hpms.grids[cell,]
-    ##     couch.test.doc <- paste(df.pred.grid$geo_id,couch.test.date,sep='_')
-
-    ##     ## print(getCurlInfo(couchdb.handle))
-    ##     test.doc.json <- couch.get(hpms.grid.couch.db,couch.test.doc,local=TRUE, h=couchdb.handle)
         if('error' %in% names(row)){
-    ##     if('error' %in% names(test.doc.json) ){
              hpmstodo[cell] <- TRUE  ##true means need to do this document
-    ##         print(paste('need to do',couch.test.doc))
-    ##     } else {
-    ##         hpmstodo[cell] <- FALSE ##false means doc is dropped from index
          }
     }
 
     if(length(picker[hpmstodo])<1){
+        print(paste('all done',couch.test.date))
         return ()
     }
     picked = picker[hpmstodo]
-    print(df.hpms.grids[picked,])
+    print(paste('still to do',length(picked),couch.test.date))
+
     if(length(picked)>1)    picked = sample(picked) ## randomly permute
 
     if(length(unique(df.data$s.idx))<2){
         ## just assign frac to hpms cells
         for(sim.set in picked){
             df.pred.grid <- df.hpms.grids[sim.set,]
-            print(paste('processing',couch.test.doc))
             df.all.predictions <- data.frame('ts'= ts.ts)
             df.all.predictions$i_cell <- df.hpms.grids[sim.set,'i_cell']
             df.all.predictions$j_cell <- df.hpms.grids[sim.set,'j_cell']
@@ -188,8 +174,6 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year){
                 rnm = names(df.all.predictions)
                 names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
                 save.these = ! is.na(df.all.predictions$n)
-                print('save.these is')
-                print(summary(save.these))
                 couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
             }
         }

@@ -1,0 +1,8 @@
+{"spatial":
+ {"gridpoints":
+"function(doc) { \n
+    if (doc.type !== \"Topology\"){\n
+        if(doc.i_cell !== undefined && doc.j_cell !== undefined) \n
+           emit({type: \"Point\", coordinates: [doc.i_cell, doc.j_cell]}, null) }}"
+ }
+}

@@ -162,18 +162,22 @@ runme <- function(){
       numclust = ceiling(dim(df.grid.data)[1] / 20)
       if(numclust > 10) numclust = 10
       print(paste('numclust is ',numclust,'dims is',dim(df.grid.data)[1]))
-      cl <- clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
-      centers <- as.data.frame(cl$medoids)
-      centers$clustering = cl$clustering[rownames(cl$medoids)]
-      assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))
-      print(paste('processing',basin,year))
+      if(numclust > 0){
+        cl <- clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
+        centers <- as.data.frame(cl$medoids)
+        centers$clustering = cl$clustering[rownames(cl$medoids)]
+        assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))
+        print(paste('processing',basin,year))
 
-      for(cl.i in 1:numclust){
+        for(cl.i in 1:numclust){
           print(paste('cluster',cl.i,'of',numclust))
           grid.idx <- cl$clustering==cl.i
           hpms.idx <- assign.cluster$V1==cl.i
           process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month,local=TRUE)
-      }
+        }
+     }else{
+       print('skipping, no data')
+     }
   }
 }
 runme()

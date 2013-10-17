@@ -131,12 +131,9 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year,local=TRUE){
     overlap <- df.hpms.grids$geo_id %in% geoids
     df.hpms.grids <- df.hpms.grids[!overlap,]
 
-    ## loop over hpms cells,  and simulate what should be there
-    simlim <- length(df.hpms.grids[,1])
-    picker <- 1:simlim
-    df.pred.keys <- (df.hpms.grids[picker,])$geo_id
 
-    couch.test.docs <- paste(df.pred.keys,couch.test.date,sep='_')
+    picker <- 1:length(df.hpms.grids[,1])
+    couch.test.docs <- paste(df.hpms.grids$geo_id,couch.test.date,sep='_')
     result = couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local)
     rows = result$rows
     print(length(rows))

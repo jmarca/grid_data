@@ -1,0 +1,17 @@
+{
+  "name": "calvad",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "grunt": "",
+    "grunt-contrib-jshint": "",
+    "grunt-open": "",
+    "matchdep": "",
+    "couchapp": "",
+    "grunt-couchapp": "git://github.com/jmarca/grunt-couchapp.git#feature/cookie_auth",
+    "lodash": ""
+  },
+  "engines": {
+    "node": ""
+  }
+}

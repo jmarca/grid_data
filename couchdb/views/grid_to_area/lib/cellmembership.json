@@ -1,4 +1,4 @@
-exports.membership = { "100_223":{"airbasin":"NORTH COAST","bas":"NC","county":"MENDOCINO","fips":"23","airdistrict":"MENDOCINO COUNTY AQMD","dis":"MEN"},
+{ "100_223":{"airbasin":"NORTH COAST","bas":"NC","county":"MENDOCINO","fips":"23","airdistrict":"MENDOCINO COUNTY AQMD","dis":"MEN"},
  "100_224":{"airbasin":"NORTH COAST","bas":"NC","county":"MENDOCINO","fips":"23","airdistrict":"MENDOCINO COUNTY AQMD","dis":"MEN"},
  "100_226":{"airbasin":"NORTH COAST","bas":"NC","county":"HUMBOLDT","fips":"12","airdistrict":"NORTH COAST UNIFIED AQMD","dis":"NCU"},
  "100_227":{"airbasin":"NORTH COAST","bas":"NC","county":"HUMBOLDT","fips":"12","airdistrict":"NORTH COAST UNIFIED AQMD","dis":"NCU"},
@@ -9891,4 +9891,4 @@ exports.membership = { "100_223":{"airbasin":"NORTH COAST","bas":"NC","county":"
  "224_53":{"airbasin":"SOUTH COAST","bas":"SC","county":"LOS ANGELES","fips":"19","airdistrict":"SOUTH COAST AQMD","dis":"SC"},
  "304_48":{"airbasin":"SALTON SEA","bas":"SS","county":"IMPERIAL","fips":"13","airdistrict":"IMPERIAL COUNTY APCD","dis":"IMP"},
  "98_247":{"airbasin":"NORTH COAST","bas":"NC","county":"HUMBOLDT","fips":"12","airdistrict":"NORTH COAST UNIFIED AQMD","dis":"NCU"}
-                 };
+                 }

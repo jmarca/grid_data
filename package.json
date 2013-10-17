@@ -6,21 +6,23 @@
   "directories": {
     "test": "test"
   },
-    "dependencies": {
-        "lodash": "",
-        "pg":"",
-        "superagent":"",
-        "request":"",
-        "topojson":"",
-        "optimist":"",
-        "async": "",
-        "calvad_areas":"git://github.com/jmarca/calvad_areas.git",
-        "calvad_compute_aadt":"git://github.com/jmarca/calvad_compute_aadt.git",
-        "couchdb_bulkdoc_saver":"git://github.com/jmarca/couchdb_bulkdoc_saver.git"
-    },
-    "devDependencies": {
-        "should": ""
-    },
+  "dependencies": {
+    "lodash": "",
+    "pg": "",
+    "superagent": "",
+    "request": "",
+    "topojson": "",
+    "optimist": "",
+    "async": "",
+    "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
+    "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
+    "couchdb_bulkdoc_saver": "git://github.com/jmarca/couchdb_bulkdoc_saver.git"
+  },
+  "devDependencies": {
+    "should": "",
+    "grunt-couchapp": "~0.2.0",
+    "couchapp": "~0.10.0"
+  },
   "scripts": {
     "test": "mocha"
   },

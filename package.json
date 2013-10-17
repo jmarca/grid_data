@@ -20,8 +20,6 @@
   },
   "devDependencies": {
     "should": "",
-    "grunt-couchapp": "~0.2.0",
-    "couchapp": "~0.10.0"
   },
   "scripts": {
     "test": "mocha"

@@ -6,6 +6,7 @@ var airdistrict = require('./lib/dump_airdistrict_membership')
 
 var ddoc = {
     _id: '_design/calvad',
+    language:"javascript",
     rewrites: [{
       from: '',
       to: 'index.html',

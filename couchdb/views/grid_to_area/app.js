@@ -1,8 +1,8 @@
 var couchapp = require('couchapp')
 var cellmembership = require('./lib/cellmembership.json')
-var county = require('./lib/dump_county_membership')
-var airbasin = require('./lib/dump_airbasin_membership')
-var airdistrict = require('./lib/dump_airdistrict_membership')
+var county = require('./lib/dump_county_membership_vds')
+var airbasin = require('./lib/dump_airbasin_membership_vds')
+var airdistrict = require('./lib/dump_airdistrict_membership_vds')
 
 var ddoc = {
     _id: '_design/calvad',

@@ -216,3 +216,93 @@ left outer join countygrids using (cell)
 left outer join districtgrids using (cell)
 order by jsonstr
 ;
+
+
+-- now to get grid cells overlapping current calvad data.
+
+
+
+with alldetectors as
+  (select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell,st_centroid(grids.geom4326) as centroid, grids.geom4326 as geom
+   from carbgrid.state4k grids
+   join tempseg.tdetector ttd on  st_intersects(ttd.seggeom,grids.geom4326)
+   ),
+basingrids as
+  (select distinct c.cell, '"airbasin":"'||basin_name||'","bas":"'|| ab ||'"' as basinstr
+   from alldetectors c
+   join public.carb_airbasins_aligned_03 a on (st_contains(a.geom_4326,c.centroid))
+   ),
+countygrids as
+  (select distinct c.cell, '"county":"'||a.name||'","fips":"'|| conum ||'"' as countystr
+   from alldetectors c
+   join public.carb_counties_aligned_03 a on (st_contains(a.geom4326,c.centroid))
+   ),
+districtgrids as
+  (select distinct c.cell, '"airdistrict":"'||a.disn||'","dis":"'|| a.dis ||'"' as districtstr
+   from alldetectors c
+   join public.carb_airdistricts_aligned_03 a on (st_contains(a.geom4326,c.centroid))
+   )
+select  '"'|| cell ||'":{'|| basinstr || ',' || countystr || ',' || districtstr ||  '},' as jsonstr
+from basingrids
+left outer join countygrids using (cell)
+left outer join districtgrids using (cell)
+order by cell,jsonstr
+;
+
+
+-- echo of the edge cases, from above
+
+with alldetectorgrids as
+  (select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell,st_centroid(grids.geom4326) as centroid, grids.geom4326 as geom
+   from carbgrid.state4k grids
+   join tempseg.tdetector ttd on  st_intersects(ttd.geom,grids.geom4326)
+   ),
+containedgrids as
+  (select distinct cell
+   from alldetectorgrids hg
+   join public.carb_airbasins_aligned_03 a on (st_contains(a.geom_4326,hg.centroid))
+   ),
+uncontained as
+  (select hg.*
+   from alldetectorgrids hg
+   left outer join containedgrids u on (hg.cell=u.cell)
+   where u.cell is null
+   ),
+basingrids as
+  (select distinct u.cell, '"airbasin":"'||basin_name||'","bas":"'|| ab ||'"' as basinstr
+   from uncontained u
+   join public.carb_airbasins_aligned_03 a on (st_intersects(a.geom_4326,u.geom))
+   ),
+countygrids as
+  (select distinct u.cell, '"county":"'||a.name||'","fips":"'|| conum ||'"' as countystr
+   from uncontained u
+   join public.carb_counties_aligned_03 a on (st_intersects(a.geom4326,u.geom))
+   ),
+districtgrids as
+  (select distinct u.cell, '"airdistrict":"'||a.disn||'","dis":"'|| a.dis ||'"' as districtstr
+   from uncontained u
+   join public.carb_airdistricts_aligned_03 a on (st_intersects(a.geom4326,u.geom))
+   )
+select  '"'|| cell ||'":{'|| basinstr || ',' || countystr || ',' || districtstr ||  '},' as jsonstr
+from basingrids
+left outer join countygrids using (cell)
+left outer join districtgrids using (cell)
+order by jsonstr
+;
+
+
+
+-- missing still
+
+with gridwith as
+     (select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell,st_centroid(grids.geom4326) as centroid, grids.geom4326 as geom
+   from carbgrid.state4k grids
+   where i_cell=252 and j_cell=21
+     )
+
+with alldetectors as
+  (select distinct floor(grids.i_cell) || '_'|| floor(grids.j_cell) as cell,st_centroid(grids.geom4326) as centroid, grids.geom4326 as geom
+   from carbgrid.state4k grids
+   join tempseg.versioned_detector_segment_geometry vdsg on st_intersects(seggeom,grids.geom4326)
+   )
+select cell from alldetectors order by cell;

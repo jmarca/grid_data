@@ -1,6 +1,4 @@
-                                                                         jsonstr                                                                          
-----------------------------------------------------------------------------------------------------------------------------------------------------------
- "115_200":{"airbasin":"NORTH COAST","bas":"NC","county":"MENDOCINO","fips":"23","airdistrict":"MENDOCINO COUNTY AQMD","dis":"MEN"},
+{ "115_200":{"airbasin":"NORTH COAST","bas":"NC","county":"MENDOCINO","fips":"23","airdistrict":"MENDOCINO COUNTY AQMD","dis":"MEN"},
  "121_198":{"airbasin":"LAKE COUNTY","bas":"LC","county":"LAKE","fips":"17","airdistrict":"LAKE COUNTY AQMD","dis":"LAK"},
  "124_181":{"airbasin":"SAN FRANCISCO BAY AREA","bas":"SF","county":"SONOMA","fips":"49","airdistrict":"BAY AREA AQMD","dis":"BA"},
  "124_182":{"airbasin":"SAN FRANCISCO BAY AREA","bas":"SF","county":"SONOMA","fips":"49","airdistrict":"BAY AREA AQMD","dis":"BA"},
@@ -909,6 +907,5 @@
  "270_55":{"airbasin":"SALTON SEA","bas":"SS","county":"RIVERSIDE","fips":"33","airdistrict":"SOUTH COAST AQMD","dis":"SC"},
  "281_29":{"airbasin":"SALTON SEA","bas":"SS","county":"IMPERIAL","fips":"13","airdistrict":"IMPERIAL COUNTY APCD","dis":"IMP"},
  "287_30":{"airbasin":"SALTON SEA","bas":"SS","county":"IMPERIAL","fips":"13","airdistrict":"IMPERIAL COUNTY APCD","dis":"IMP"},
- "96_242":{"airbasin":"NORTH COAST","bas":"NC","county":"HUMBOLDT","fips":"12","airdistrict":"NORTH COAST UNIFIED AQMD","dis":"NCU"},
-(910 rows)
-
+ "96_242":{"airbasin":"NORTH COAST","bas":"NC","county":"HUMBOLDT","fips":"12","airdistrict":"NORTH COAST UNIFIED AQMD","dis":"NCU"}
+}

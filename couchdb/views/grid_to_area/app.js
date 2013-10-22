@@ -3,6 +3,7 @@ var cellmembership = require('./lib/cellmembership.json')
 var county = require('./lib/dump_county_membership_vds')
 var airbasin = require('./lib/dump_airbasin_membership_vds')
 var airdistrict = require('./lib/dump_airdistrict_membership_vds')
+var other = require('./lib/not_in_lookup')
 
 var ddoc = {
     _id: '_design/calvad',
@@ -31,6 +32,10 @@ var ddoc = {
       ,"airbasin":{
           "map":airbasin,
           "reduce":"_sum"
+      }
+      ,"other":{
+          "map":other,
+          "reduce":"_count"
       }
     },
     lists: {},

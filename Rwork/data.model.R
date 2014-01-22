@@ -1,5 +1,5 @@
 library(doMC)
-registerDoMC()
+registerDoMC(3)
 
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 

@@ -107,7 +107,8 @@ describe('couch_file',function(){
                              should.not.exist(err)
                              should.exist(cbtask)
                              // check with couchdb, make sure that what you get is a topology
-                             var couch = 'http://'+chost+':'+cport+'/'+test_db
+                             var couch = 'http://'+options.chost+':'+options.cport+'/'+options.couchdb
+
 
 
                              var uris = [couch +'/topology4326']
@@ -125,15 +126,12 @@ describe('couch_file',function(){
                                                                var topo_objects = c.objects
                                                                _.each(topo_objects
                                                                      ,function(obj){
+                                                                          console.log(Object.keys(obj))
                                                                           obj.should.have.property('type')
                                                                           obj.should.have.property('id')
-                                                                          obj.id.should.match(/^\d+_\d+$/)
+                                                                          obj.id.should.eql('grids')
 
                                                                       })
-                                                               c.should.have.property('arcs')
-                                                               c.arcs.should.have.property('length')
-                                                               c.arcs.length.should.be.above(0)
-                                                               console.log('arcs.length is '+c.arcs.length)
                                                                return cb(null)
                                                            })
                                            }

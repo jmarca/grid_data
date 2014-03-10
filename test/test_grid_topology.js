@@ -19,34 +19,54 @@ var ppass = process.env.PSQL_PASS
 var phost = process.env.PSQL_TEST_HOST || '127.0.0.1'
 var pport = process.env.PSQL_PORT || 5432
 
+var config_okay = require('config_okay')
+
 
 var test_db ='test%2fcarb%2fgrid%2ftopology'
-var options ={'chost':chost
-             ,'cport':cport
-             ,'cusername':cuser
-             ,'cpassword':cpass
-             ,'couch_db' : test_db
-             ,'host':phost
-             ,'port':pport
-             ,'username':puser
-             ,'password':ppass
+var options ={}
+var path    = require('path')
+var rootdir = path.normalize(__dirname)
+var config_file = rootdir+'/../test.config.json'
+
+before(function(done){
+    config_okay(config_file,function(err,c){
+        var date = new Date()
+        var test_db_unique = date.getHours()+'-'
+                           + date.getMinutes()+'-'
+                           + date.getSeconds()+'-'
+                           + date.getMilliseconds()
+        options={'chost':c.couchdb.host
+                ,'cport':c.couchdb.port
+                ,'cusername':c.couchdb.auth.username
+                ,'cpassword':c.couchdb.auth.password
+                ,'couchdb' : test_db+test_db_unique
+                ,'host':c.postgres.host
+                ,'port':c.postgres.port
+                ,'username':c.postgres.auth.username
+                ,'password':c.postgres.auth.password
              }
+        return done()
+    })
+    return null
+})
 
 describe('couch_file',function(){
     var created_locally=false
     before(function(done){
         console.log('creating temporary couchdb')
         // create the test couchdb
-        var couch = 'http://'+chost+':'+cport+'/'+test_db
+        var couch = 'http://'+options.chost+':'+options.cport+'/'+options.couchdb
         var opts = {'uri':couch
                    ,'method': "PUT"
                    ,'headers': {}
                    };
-        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
+        opts.headers.authorization = 'Basic ' + new Buffer(options.cusername + ':' + options.cpassword).toString('base64')
         opts.headers['Content-Type'] =  'application/json'
         request(opts
                ,function(e,r,b){
+                    console.log(b)
                     if(e) return done(e)
+                    if(JSON.parse(b).error !== undefined) return done(b)
                     created_locally=true
                     return done()
                 })
@@ -56,14 +76,14 @@ describe('couch_file',function(){
         if(!created_locally) return done()
 
         // bail in development
-        // return done()
+        return done()
         console.log('deleting temporary couchdb')
-        var couch = 'http://'+chost+':'+cport+'/'+test_db
+        var couch = 'http://'+options.chost+':'+options.cport+'/'+options.couchdb
         var opts = {'uri':couch
                    ,'method': "DELETE"
                    ,'headers': {}
                    };
-        opts.headers.authorization = 'Basic ' + new Buffer(cuser + ':' + cpass).toString('base64')
+        opts.headers.authorization = 'Basic ' + new Buffer(options.cuser + ':' + options.cpass).toString('base64')
         opts.headers['Content-Type'] =  'application/json'
         request(opts
                ,function(e,r,b){
@@ -90,7 +110,7 @@ describe('couch_file',function(){
                              var couch = 'http://'+chost+':'+cport+'/'+test_db
 
 
-                             var uris = [couch +'/topology4326',couch +'/topology']
+                             var uris = [couch +'/topology4326']
                              async.forEach(uris
                                           ,function(uri,cb){
                                                request.get(uri

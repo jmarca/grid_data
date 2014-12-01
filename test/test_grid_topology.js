@@ -95,10 +95,14 @@ describe('couch_file',function(){
 
     it('should save something to couchdb'
       ,function(done){
-           var task={i0:140
-                    ,i1:160
-                    ,j0:150
-                    ,j1:200
+           // var task={i0:140
+           //          ,i1:160
+           //          ,j0:150
+           //          ,j1:200
+           var task={i0:91
+                    ,i1:316
+                    ,j0:21
+                    ,j1:279
                     ,options:options}
 
            grid_topology(task

@@ -1,5 +1,13 @@
 # CARB grid and HPMS processing (in R)
 
+# Nota Bene
+
+This code actually has very little to do with the HPMS data.  The main
+purpose is to estimate the hourly fraction of AADT for each grid cell
+in california, and that computation is based solely on the grid values
+from the VDS and WIM data.  To see how and where the HPMS data enters
+into the system, go look at `../grid_merge/lib/query_postgres.js`
+
 # CARB grid data handling
 
 The CARB grid is a 4km grid covering California.  It seems to be the
@@ -159,11 +167,3 @@ These are:
 * LC
 
 ### see also the README.md in Rwork directory
-
-# Notes
-
-This code actually has very little to do with the HPMS data.  The main
-purpose is to estimate the hourly fraction of AADT for each grid cell
-in california, and that computation is based solely on the grid values
-from the VDS and WIM data.  To see how and where the HPMS data enters
-into the system, go look at `../grid_merge/lib/query_postgres.js`

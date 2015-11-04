@@ -70,40 +70,6 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
 
 
 
-couch.allDocsPost <- function(db, keys, view='_all_docs', include.docs = TRUE, local=TRUE, h=getCurlHandle()){
-
-  if(length(db)>1){
-    db <- couch.makedbname(db)
-  }
-  cdb <- localcouchdb
-  if(!local){
-    cdb <- couchdb
-  }
-  ## docname <- '_all_docs'
-  uri <- paste(cdb,db,view,sep="/");
-##   print(uri)
-  k <- paste('{"keys":["',
-             paste(keys,collapse='","'),
-             '"]}',sep='')
-  if(include.docs){
-      uri <- paste(uri,'include_docs=true',sep='?')
-      ## }else{
-      ##   q <- paste(q,sep='&')
-  }
-  reader <- basicTextGatherer()
-  curlPerform(
-              url = uri
-              ,customrequest = "POST"
-              ,httpheader = c('Content-Type'='application/json')
-              ,postfields = k
-              ,writefunction = reader$update
-              ,curl=h
-              )
-  fromJSON(reader$value()[[1]],simplify=FALSE)
-}
-
-
-
 ## send a chunk of data to this function
 data.model.and.predict <- function(df.data,df.hpms.grids,year,local=TRUE){
 

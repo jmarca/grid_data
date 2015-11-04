@@ -1,6 +1,9 @@
-node_modules/
-Rwork/.RData
+**/node_modules/
+**/.RData
 Rwork/.Rhistory
 Rwork/Rtmp**
 Rwork/*.pdf
-components/
+**/components/
+/test.config.json
+/config.json
+*~

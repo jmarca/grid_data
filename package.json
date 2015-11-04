@@ -16,10 +16,11 @@
     "async": "",
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
-    "couchdb_bulkdoc_saver": "git://github.com/jmarca/couchdb_bulkdoc_saver.git"
+    "couchdb_bulkdoc_saver": "git://github.com/jmarca/couchdb_bulkdoc_saver.git",
+    "config_okay":""
   },
   "devDependencies": {
-    "should": "",
+    "should": ""
   },
   "scripts": {
     "test": "mocha"

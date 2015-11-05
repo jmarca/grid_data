@@ -252,7 +252,7 @@ runme <- function(){
       if(numclust > 10) numclust = 10
       print(paste('numclust is ',numclust,'dims is',dim(df.grid.data)[1]))
       if(numclust > 0){
-        cl <- clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
+        cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
         centers <- as.data.frame(cl$medoids)
         centers$clustering = cl$clustering[rownames(cl$medoids)]
         assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))

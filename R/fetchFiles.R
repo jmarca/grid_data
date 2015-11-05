@@ -1,18 +1,48 @@
 library(spTimer)
-source('../components/jmarca-rstats_couch_utils/couchUtils.R')
-source('../components/jmarca-rstats_remote_files/remoteFiles.R')
-source('./loadJSON.R')
+# source('../components/jmarca-rstats_couch_utils/couchUtils.R')
+# source('../components/jmarca-rstats_remote_files/remoteFiles.R')
+# source('./loadJSON.R')
 
 grid.couch.db <- 'carb%2fgrid%2fstate4k'
 
-get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
+##' Get the grid file from a remote server.
+##'
+##' This function probably won't work because there aren't currently
+##' any remote servers that are live for serving files.  However if
+##' you do make one of those, then pass the URL of the server as the
+##' 'server' argument.
+##'
+##' @title get.grid.file
+##' @param i the i cell
+##' @param j the j cell
+##' @param server the URL of the file server you want to hit
+##' @param service defaults to 'grid'.  The service on the remote server (the path)
+##' @return the result of calling remoteFiles::load.remote.file, which
+##'     at the moment isn't a real package so you'll probably be
+##'     disappointed.
+##' @author James E. Marca
+get.grid.file <- function(i,j,server,service='grid'){
 
-   load.remote.file(server,service='grid',root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
+    remoteFiles::load.remote.file(server,service=service,root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
+
 }
 
 # one connection per thread
 couchdb.handle = getCurlHandle()
-
+##' Get the grid file from CouchDB
+##'
+##' This function is currently the one to use.  It gets the specified
+##' grid cell data from a CouchDB database.
+##'
+##' @title get.grid.file.from.couch
+##' @param i the i cell
+##' @param j the j cell
+##' @param start the start time
+##' @param end the end time
+##' @param local boolean, defaults to TRUE.  Passed on to the get couch methods
+##' @param include.docs boolean, defaults to TRUE.
+##' @return The result of calling rcouchutils::couch.allDocs()
+##' @author James E. Marca
 get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE){
 
   start.date.part <- start
@@ -26,19 +56,47 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE)
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
     )
-  json <- couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs, h=couchdb.handle)
+    json <- rcouchutils::couch.allDocs(grid.couch.db ,
+                                       query=query,
+                                       local=local,
+                                       include.docs=include.docs,
+                                       h=couchdb.handle)
   return(json)
 }
 
+##' Get the AADT value for a grid cell from CouchDB
+##'
+##' This function will get the AADT from the specified grid cell from
+##' a CouchDB database.
+##'
+##' @title get.grid.aadt.from.couch
+##' @param i the i cell
+##' @param j the j cell
+##' @param year the year
+##' @param local boolean, defaults to TRUE.  Passed along to rcouchutils
+##' @return the result of rcouchutils::couch.get
+##' @author James E. Marca
 get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
     ## when bug is fixed, make this i,j,year,aadt
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-  json <- couch.get(grid.couch.db , docname=doc, local=local, h=couchdb.handle)
+    json <- rcouchutils::couch.get(grid.couch.db ,
+                                   docname=doc,
+                                   local=local,
+                                   h=couchdb.handle)
   return(json)
 }
-
+##' Get a raft of grids
+##'
+##' Get a raft of grids. Lots of them.  pass a subset
+##' @title
+##' @param df.grid.subset a list of cells to grab
+##' @param year the year
+##' @param month the month
+##' @param local boolean, defaults to TRUE, passed on the rcouchutils
+##' @return a dataframe built from repeated calls to get.grid.file.from.couch
+##' @author James E. Marca
 get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
 
   ## df.grid.subset has a bunch of grids to get
@@ -110,7 +168,20 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
   df.mrg
 }
 
-
+##' Get rowcount of grids
+##'
+##' Something.  Probably dumb.  Calls get.grid.file.from.couch and
+##' then returns the number of rows for the grid subset passed.  Seems
+##' like a big waste of IO at this point, but maybe it is a great
+##' idea.  Been a while since I've written this.
+##'
+##' @title get.rowcount.of.grids
+##' @param df.grid.subset a subset of grids to get
+##' @param year the year
+##' @param month the month
+##' @param local boolean defaults to TRUE, passed along
+##' @return a list of row counts for each of the cells in the grid subset
+##' @author James E. Marca
 get.rowcount.of.grids <- function(df.grid.subset,year,month,local=TRUE){
 
   ## df.grid.subset has a bunch of grids to get

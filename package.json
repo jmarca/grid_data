@@ -14,10 +14,15 @@
     "topojson": "",
     "optimist": "",
     "async": "",
+    "calvad_rscripts": "jmarca/calvad_rscripts",
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
     "couchdb_bulkdoc_saver": "git://github.com/jmarca/couchdb_bulkdoc_saver.git",
-    "config_okay":""
+    "couch_check_state": "jmarca/couch_check_state",
+    "config_okay": "",
+    "configr": "jmarca/configr",
+    "queue-async": "",
+    "rcouchutils": "jmarca/rstats_couch_utils"
   },
   "devDependencies": {
     "should": ""
@@ -30,6 +35,6 @@
     "url": "https://github.com/jmarca/grid_data"
   },
   "author": "James E. Marca",
-  "license": "BSD",
+  "license": "GPL-2",
   "readmeFilename": "README.md"
 }

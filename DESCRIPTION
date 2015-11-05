@@ -1,0 +1,8 @@
+Package: griddata
+Title: do stuff with grid data
+Version: 0.0.1
+Authors@R: person("James", "Marca", email = "james@activimetrics.com", role = c("aut", "cre"))
+Description: This package is a combination of JavaScript and R code that processes grid data.  It will load up the highway hourly volumes in grids and then interpolate the hourly variations from average annual daily traffic for surrounding grid cells.
+Depends: R (>= 3.2.0)
+License: GPL-2
+LazyData: true

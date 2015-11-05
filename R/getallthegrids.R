@@ -32,29 +32,27 @@ config <- rcouchutils::get.config(config_file)
 
 
 ## get all the grids in a county
-library(cluster)
+## library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
-## requires environment variables be set externally
-psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS","PSQL_PORT"))
-psql.port = psqlenv[4]
-if(is.na(psql.port)){
-  psql.port=5432
-}
-
 spatialvds.con <-  dbConnect(m
-                  ,user=psqlenv[2]
-                  ,password=psqlenv[3]
-                  ,host=psqlenv[1]
-                  ,port=psql.port
-                  ,dbname="spatialvds")
-
+                  ,user=config$postgresql$auth$username
+                  ,host=config$postgresql$host
+                  ,port=config$postgresql$port
+                  ,dbname=config$postgresql$db)
+##' Get all the grids in an airbasin shape
+##'
+##' This function will hit postgresql and fetch all of the grid cells that lie inside of the passed-in airbasin shape.  If you stare at the query, you should see that the rule "inside" is that the centroid of the grid lies inside of the shape.
+##' @title
+##' @param basin
+##' @return
+##' @author James E. Marca
 get.all.the.grids <- function(basin){
   ## assume area is a county for now
 
   ## form a sql command
 
-  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and grids.geom4326 && basins.geom_4326" )
+  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and st_contains(basins.geom_4326,st_centroid(grids.geom4326))" )
   print(wim.query)
   rs <- dbSendQuery(con,wim.query)
   df.wim <- fetch(rs,n=-1)

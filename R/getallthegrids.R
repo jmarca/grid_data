@@ -40,69 +40,85 @@ spatialvds.con <-  dbConnect(m
                   ,host=config$postgresql$host
                   ,port=config$postgresql$port
                   ,dbname=config$postgresql$db)
+
+select.grids.in.basin <- function(basin){
+   paste("select i_cell,j_cell,"
+        ,"st_centroid(grids.geom4326) as centroid"
+        ,", grids.geom4326 as geom4326"
+        ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
+        ," where ab='",basin
+        ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
+         )
+}
+
 ##' Get all the grids in an airbasin shape
 ##'
-##' This function will hit postgresql and fetch all of the grid cells that lie inside of the passed-in airbasin shape.  If you stare at the query, you should see that the rule "inside" is that the centroid of the grid lies inside of the shape.
-##' @title
-##' @param basin
-##' @return
+##' This function will hit postgresql and fetch all of the grid cells
+##' that lie inside of the passed-in airbasin shape.  If you stare at
+##' the query, you should see that the rule "inside" is that the
+##' centroid of the grid lies inside of the shape.
+##'
+##' @title get.all.the.grids
+##' @param basin the name of the basin (two letter abbreviation)
+##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
 ##' @author James E. Marca
 get.all.the.grids <- function(basin){
   ## assume area is a county for now
 
   ## form a sql command
 
-  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and st_contains(basins.geom_4326,st_centroid(grids.geom4326))" )
-  print(wim.query)
-  rs <- dbSendQuery(con,wim.query)
-  df.wim <- fetch(rs,n=-1)
-  df.wim
+  grid.query <- select.grids.in.basin(basin)
+  print(grid.query)
+  rs <- dbSendQuery(con,grid.query)
+  df.grid <- fetch(rs,n=-1)
+  df.grid
 
 }
 
+##' Get all the grids in an airbasin shape with hpms data
+##'
+##' This function will hit postgresql and fetch all of the grid cells
+##' that lie inside of the passed-in airbasin shape.  If you stare at
+##' the query, you should see that the rule "inside" is that the
+##' centroid of the grid lies inside of the shape.
+##'
+##' @title get.all.the.grids
+##' @param basin the name of the basin (two letter abbreviation)
+##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
+##' @author James E. Marca
 get.grids.with.hpms <- function(basin){
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-## select grid cells with hpm records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," from basingrids"
-                    ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                    ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+    ## select grid cells with hpm records in them
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," from basingrids"
+                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," group by i_cell,j_cell,lon,lat"
+                       ,sep='')
+    print(grid.query)
+    rs <- dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- fetch(rs,n=-1)
+    df.grid
 }
 
 get.grids.with.hpms.data <- function(basin){
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-## select grid cells with hpm records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,h.
-'perc_single_unit',
-'avg_single_unit',
-'perc_combination',
-'avg_combination', "
-                    ," from basingrids"
-                    ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                    ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+
+    ## select grid cells with hpm records in them
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,"
+                       ," h.perc_single_unit,h.avg_single_unit,h.perc_combination,h.avg_combination "
+                       ," from basingrids"
+                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," group by i_cell,j_cell,lon,lat"
+                       ,sep='')
+    print(grid.query)
+    rs <- dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- fetch(rs,n=-1)
+    df.grid
 }
 
 get.grids.with.detectors <- function(basin){

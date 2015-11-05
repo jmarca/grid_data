@@ -84,7 +84,8 @@ get.all.the.grids <- function(basin){
 ##'
 ##' @title get.all.the.grids
 ##' @param basin the name of the basin (two letter abbreviation)
-##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
+##' @return the result of the query: rows of i_cell,j_cell, centroid
+##'     lon, centroid lat
 ##' @author James E. Marca
 get.grids.with.hpms <- function(basin){
     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
@@ -102,17 +103,46 @@ get.grids.with.hpms <- function(basin){
     df.grid
 }
 
-get.grids.with.hpms.data <- function(basin){
+## not used, and untested, and it was broken when I was editing it
+## just now so commented out
+##
+## get.grids.with.hpms.data <- function(basin){
+##     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+
+##     ## select grid cells with hpm records in them
+##     grid.query <- paste(grid.with
+##                        ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+##                        ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,"
+##                        ," h.perc_single_unit,h.avg_single_unit,h.perc_combination,h.avg_combination "
+##                        ," from basingrids"
+##                        ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+##                        ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+##                        ," group by i_cell,j_cell,lon,lat"
+##                        ,sep='')
+##     print(grid.query)
+##     rs <- dbSendQuery(spatialvds.con,grid.query)
+##     df.grid <- fetch(rs,n=-1)
+##     df.grid
+## }
+
+##' Get grid cells overlapping highway detector segments (vds or wim).
+##'
+##' Get the grid cells that are likely to have data from the VDS/WIM detectors.
+##'
+##' @title get.grids.with.detectors
+##' @param basin the air basin, two letter abbreviation
+##' @return the results of the sql query, rows of
+##'     {i_cell,j_cell,centroid lon,centroid lat}
+##' @author James E. Marca
+get.grids.with.detectors <- function(basin){
+
     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
 
-    ## select grid cells with hpm records in them
+    ## select grid cells with tdetectors records in them
     grid.query <- paste(grid.with
                        ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                       ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,"
-                       ," h.perc_single_unit,h.avg_single_unit,h.perc_combination,h.avg_combination "
                        ," from basingrids"
-                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
     print(grid.query)
@@ -121,40 +151,24 @@ get.grids.with.hpms.data <- function(basin){
     df.grid
 }
 
-get.grids.with.detectors <- function(basin){
-
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-
-## select grid cells with tdetectors records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," from basingrids"
-                    ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
-}
-
-cluster.grids <- function(df.grid){
-
-  cl.df.grid
-}
-
-process.grids <- function(df.grid){
-
-}
-
 
 hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
-
+##' Pick off HPMS grids inside the effective "range" of detector grids
+##'
+##' basically just expands the grids by one in each direction, such
+##' that you are pulling into the modeling run just the surrounding
+##' hpms grids.  if you want more grids, expand the expand parameter,
+##' say to 2 for two squares away.
+##'
+##' @title get.hpms.in.range
+##' @param df.hpms.grids the hpms grids
+##' @param df.grid the grids used for the next model run
+##' @param expand an integer number of squares to expand;  default 1
+##' @return a binary true false filter index, which is true if an hpms
+##'     grid cell falls inside of 'expand' cells away from a df.grid
+##'     cell, false otherwise.
+##' @author James E. Marca
 get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
 
     ## assume without proof that a cell can influence at least a few grid cells on either side.
@@ -171,12 +185,36 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell >= jcell.min &
         df.hpms.grids$j_cell <= jcell.max
 }
-
+##' Compute the manhattan distance between two lat, lon points
+##'
+##' @title compute.manhattan.distance
+##' @param a a value with lat, lon
+##' @param b a value with lat, lon
+##' @return manhattan distance---that is, how many blocks over plus how many up
+##' @author James E. Marca
 compute.manhattan.distance <- function(a,b){
     abs(a$lat - b$lat) + abs(a$lon - b$lon)
 }
-
+##' Assign an HPMS grid cell to a cluster
+##'
+##' Assign an HPMS grid cell to a cluster.  Uses manhattan distance,
+##' and clusters based on a next nearest neighbor rule.  Clustering is
+##' needed because doing eerything at once chokes the ram and takes an
+##' age to run.
+##'
+##' @title assign.hpms.grid.cell
+##' @param centers the centers of clusters, for computing the intial distances
+##' @return a function that will do the assigning.
+##' @author James E. Marca
 assign.hpms.grid.cell <- function(centers){
+
+##' assign a cell to a cluster
+##'
+##' This is a function that is inside.
+##' @title assign.cell
+##' @param hpms.cell the current cell that needs assigning
+##' @return the assigned cluster
+##' @author James E. Marca
     assign.cell <- function(hpms.cell){
         centers.distance <- ddply(centers,.(lat,lon,clustering),.fun=function(a){compute.manhattan.distance(a,hpms.cell)})
         min.distance <- min(centers.distance$V1)
@@ -185,7 +223,13 @@ assign.hpms.grid.cell <- function(centers){
     }
 }
 
-source('./data.model.R')
+## source('./data.model.R')
+
+##' The main function that does everything.
+##'
+##' @title runme
+##' @return null
+##' @author James E. Marca
 runme <- function(){
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))

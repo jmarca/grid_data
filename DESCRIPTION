@@ -6,4 +6,7 @@ Description: This package is a combination of JavaScript and R code that process
 Depends: R (>= 3.2.0)
 License: GPL-2
 LazyData: true
-Imports: cluster
+Imports: cluster,
+    doMC,
+    spTimer,
+    rcouchutils

@@ -1,10 +1,10 @@
-library(doMC)
-registerDoMC(3)
+## library(doMC) try using doMC::
+doMC::registerDoMC(3)
 
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-  post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.005,distance.method="geodetic:km",report=10,scale.transform="SQRT")
+  post.gp.fit <- spTimer::spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.005,distance.method="geodetic:km",report=10,scale.transform="SQRT")
   post.gp.fit
 
 }
@@ -36,6 +36,7 @@ data.predict.generator <- function(df.pred.grid,ts.un){
         # grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
         grid.coords<-as.matrix(unique(cbind(df.mrg$Longitude,df.mrg$Latitude)))
         print(grid.coords)
+        ## might need spTimer::predict.spT
         predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
     })
 }
@@ -64,7 +65,7 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
     for(sim.site in 1:(length(df.pred.grid[,1]))){
         rnm = names(df.all.predictions[[sim.site]])
         names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
-        couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
+        rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
     }
 }
 

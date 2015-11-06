@@ -26,15 +26,19 @@ select.grids.in.basin <- function(basin){
 ##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
 ##' @author James E. Marca
 get.all.the.grids <- function(basin){
-  ## assume area is a county for now
+    ## assume area is a county for now
 
-  ## form a sql command
+    ## form a sql command
 
-  grid.query <- select.grids.in.basin(basin)
-  print(grid.query)
-  rs <- dbSendQuery(con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," from basingrids"
+                       ,sep='')
+    print(grid.query)
+    rs <- dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- fetch(rs,n=-1)
+    df.grid
 
 }
 
@@ -113,9 +117,6 @@ get.grids.with.detectors <- function(basin){
     df.grid <- fetch(rs,n=-1)
     df.grid
 }
-
-
-hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
 ##' Pick off HPMS grids inside the effective "range" of detector grids
 ##'

@@ -10,3 +10,4 @@ Imports: cluster,
     doMC,
     spTimer,
     rcouchutils
+Suggests: testthat

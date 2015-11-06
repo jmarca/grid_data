@@ -1,6 +1,5 @@
 ## crazy global, just hanging out here.
 ## shouldn't this be in the config file?
-hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
 
 
 ## library(doMC) try using doMC::

@@ -3,7 +3,6 @@
 # source('../components/jmarca-rstats_remote_files/remoteFiles.R')
 # source('./loadJSON.R')
 
-grid.couch.db <- 'carb%2fgrid%2fstate4k'
 
 ##' Get the grid file from a remote server.
 ##'
@@ -27,7 +26,7 @@ get.grid.file <- function(i,j,server,service='grid'){
 
 }
 
-# one connection per thread
+## one connection per thread?  no, leave it be
 ## couchdb.handle = getCurlHandle()
 
 ##' Get the grid file from CouchDB
@@ -45,21 +44,24 @@ get.grid.file <- function(i,j,server,service='grid'){
 ##' @author James E. Marca
 get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
 
-  start.date.part <- start
-  end.date.part <-  end
-  if(!is.character(start)){
-    start.date.part <- format(start,"%Y-%m-%d %H:00")
-    end.date.part <- format(end,"%Y-%m-%d %H:00")
-  }
+    start.date.part <- start
+    end.date.part <-  end
+    if(!is.character(start)){
+        start.date.part <- format(start,"%Y-%m-%d %H:00")
+        end.date.part <- format(end,"%Y-%m-%d %H:00")
+    }
 
-  query=list(
-    'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
-    'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
+    start.doc <- paste(i,j,start.date.part,sep='_')
+    end.doc <- paste(i,j,end.date.part,sep='_')
+    query=list(
+        'startkey'=paste('%22',start.doc,'%22',sep=''),
+        'endkey'=paste('%22',end.doc,'%22',sep='')
     )
-    json <- rcouchutils::couch.allDocs(grid.couch.db ,
+    ## fixme put this global as a parameter in the call
+    json <- rcouchutils::couch.allDocs(config$couchdb$grid_detectors ,
                                        query=query,
                                        include.docs=include.docs)
-  return(json)
+    return(json)
 }
 
 ##' Get the AADT value for a grid cell from CouchDB
@@ -78,7 +80,8 @@ get.grid.aadt.from.couch <- function(i,j,year){
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-    json <- rcouchutils::couch.get(grid.couch.db ,
+    ## fixme move this config global to a parameter
+    json <- rcouchutils::couch.get(config$couchdb$grid_detectors ,
                                    docname=doc)
   return(json)
 }
@@ -179,11 +182,11 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month){
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
   ## make a start and end date
-  month.padded=paste(month)
-  if(month<10) month.padded=paste('0',month,sep='')
+  month.padded <- paste(month)
+  if(month<10) month.padded <- paste('0',month,sep='')
   start.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
-  month.padded=paste(month+1)
-  if(month+1<10) month.padded=paste('0',month+1,sep='')
+  month.padded <- paste(month+1)
+  if(month+1<10) month.padded <- paste('0',month+1,sep='')
   end.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
   df.grid.subset$rows <- 0
   for(i in 1:length(df.grid.subset[,1])){

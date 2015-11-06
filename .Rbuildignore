@@ -1,3 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^CONDUCT\.md$
+^devel_scratch
+^config\.json$
+^test\.config\.json$

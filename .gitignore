@@ -11,3 +11,4 @@ Rwork/*.pdf
 .Rhistory
 .RData
 .tern-port
+config.json

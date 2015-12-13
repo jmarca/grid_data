@@ -1,7 +1,7 @@
 library(spTimer)
-source('../components/jmarca-rstats_couch_utils/couchUtils.R')
-source('../components/jmarca-rstats_remote_files/remoteFiles.R')
-source('./loadJSON.R')
+## source('../components/jmarca-rstats_couch_utils/couchUtils.R')
+## source('../components/jmarca-rstats_remote_files/remoteFiles.R')
+## source('./loadJSON.R')
 
 grid.couch.db <- 'carb%2fgrid%2fstate4k'
 
@@ -26,7 +26,7 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE)
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
     )
-  json <- couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs, h=couchdb.handle)
+  json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs, h=couchdb.handle)
   return(json)
 }
 
@@ -35,7 +35,7 @@ get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-  json <- couch.get(grid.couch.db , docname=doc, local=local, h=couchdb.handle)
+  json <- rcouchutils::couch.get(grid.couch.db , docname=doc, local=local, h=couchdb.handle)
   return(json)
 }
 

@@ -64,7 +64,7 @@ group.loop <- function(df.pred.grid,var.models,ts.ts,ts.un){
     for(sim.site in 1:(length(df.pred.grid[,1]))){
         rnm = names(df.all.predictions[[sim.site]])
         names(df.all.predictions[[sim.site]]) <- gsub('.aadt.frac','',x=rnm)
-        couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
+        rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[[sim.site]],local=TRUE,makeJSON=dumpPredictionsToJSON)
     }
 }
 
@@ -100,7 +100,7 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year,local=TRUE){
 
     picker <- 1:length(df.hpms.grids[,1])
     couch.test.docs <- paste(df.hpms.grids$geo_id,couch.test.date,sep='_')
-    result = couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local)
+    result = rcouchutils::couch.allDocsPost(hpms.grid.couch.db,couch.test.docs,include.docs=FALSE,local=local)
     rows = result$rows
     print(length(rows))
     hpmstodo <- picker < 0 # default false
@@ -137,7 +137,7 @@ data.model.and.predict <- function(df.data,df.hpms.grids,year,local=TRUE){
                 rnm = names(df.all.predictions)
                 names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
                 save.these = ! is.na(df.all.predictions$n)
-                couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
+                rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],local=TRUE,makeJSON=dumpPredictionsToJSON)
             }
         }
     }else{

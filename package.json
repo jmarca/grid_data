@@ -23,6 +23,8 @@
     "configr": "jmarca/configr",
     "queue-async": "",
     "rcouchutils": "jmarca/rstats_couch_utils"
+    "calvad_rscripts": "jmarca/calvad_rscripts",
+    "rstats_remote_files": "jmarca/rstats_remote_files",
   },
   "devDependencies": {
     "should": ""

@@ -17,6 +17,10 @@
     "calvad_areas": "git://github.com/jmarca/calvad_areas.git",
     "calvad_compute_aadt": "git://github.com/jmarca/calvad_compute_aadt.git",
     "couchdb_bulkdoc_saver": "git://github.com/jmarca/couchdb_bulkdoc_saver.git",
+    "calvad_rscripts": "jmarca/calvad_rscripts",
+    "rstats_couch_utils": "jmarca/rstats_couch_utils",
+    "configr": "jmarca/configr",
+    "rstats_remote_files": "jmarca/rstats_remote_files",
     "config_okay":""
   },
   "devDependencies": {

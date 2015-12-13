@@ -1,3 +1,40 @@
+## need node_modules directories
+dot_is <- getwd()
+node_paths <- dir(paste(dot_is,'/..',sep=''),pattern='\\.Rlibs',
+                  full.names=TRUE,recursive=TRUE,
+                  ignore.case=TRUE,include.dirs=TRUE,
+                  all.files = TRUE)
+path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
+lib_paths <- .libPaths()
+.libPaths(c(path, lib_paths))
+
+print(.libPaths())
+
+## pkg <- devtools::as.package('.')
+## ns_env <- devtools::load_all(pkg,quiet = TRUE)$env
+
+## need env for test file
+config_file <- Sys.getenv('R_CONFIG')
+
+if(config_file ==  ''){
+    config_file <- '../config.json'
+}
+print(paste ('using config file =',config_file))
+config <- rcouchutils::get.config(config_file)
+
+
+source('./fetchFiles.R')
+
+## get all the grids in a county
+library(cluster)
+library('RPostgreSQL')
+m <- dbDriver("PostgreSQL")
+## requires environment variables be set externally
+psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS","PSQL_PORT"))
+psql.port = psqlenv[4]
+if(is.na(psql.port)){
+  psql.port=5432
+}
 ##' A little script to save typing out the same bit of sql
 ##'
 ##' @title select.grids.in.basin
@@ -13,7 +50,6 @@ select.grids.in.basin <- function(basin){
         ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
         ,sep='')
 }
-
 ##' Get all the grids in an airbasin shape
 ##'
 ##' This function will hit postgresql and fetch all of the grid cells
@@ -200,9 +236,15 @@ runme <- function(){
   year = Sys.getenv(c("CARB_GRID_YEAR"))
   gridenv = Sys.getenv(c("AIRBASIN"))
   basin = gridenv[1]
-  df.grid <- get.grids.with.detectors(basin)
+    df.grid <- get.grids.with.detectors(basin)
+    print('dim df grid')
+    print(dim(df.grid))
+
   df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
   df.hpms.grids <- get.grids.with.hpms(basin)
+    print('dim df hpms grid')
+    print(dim(df.hpms.grids))
+
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
   months=1:12
@@ -210,6 +252,7 @@ runme <- function(){
 
       ## cluster **ONLY** the grid cells with valid data
       data.count <- get.rowcount.of.grids(df.grid,month=month,year=year)
+
       df.grid.data <- df.grid[data.count>0,]
 
       ## want clusters of about 20
@@ -227,7 +270,7 @@ runme <- function(){
           print(paste('cluster',cl.i,'of',numclust))
           grid.idx <- cl$clustering==cl.i
           hpms.idx <- assign.cluster$V1==cl.i
-          process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month,local=TRUE)
+          process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month)
         }
      }else{
        print('skipping, no data')

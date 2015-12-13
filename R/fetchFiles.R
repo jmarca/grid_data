@@ -26,9 +26,8 @@ get.grid.file <- function(i,j,server,service='grid'){
 
 }
 
-## one connection per thread?  no, leave it be
-## couchdb.handle = getCurlHandle()
-
+# one connection per thread
+# couchdb.handle = getCurlHandle()
 ##' Get the grid file from CouchDB
 ##'
 ##' This function is currently the one to use.  It gets the specified
@@ -51,17 +50,15 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
         end.date.part <- format(end,"%Y-%m-%d %H:00")
     }
 
-    start.doc <- paste(i,j,start.date.part,sep='_')
-    end.doc <- paste(i,j,end.date.part,sep='_')
-    query=list(
-        'startkey'=paste('%22',start.doc,'%22',sep=''),
-        'endkey'=paste('%22',end.doc,'%22',sep='')
-    )
-    ## fixme put this global as a parameter in the call
-    json <- rcouchutils::couch.allDocs(config$couchdb$grid_detectors ,
-                                       query=query,
-                                       include.docs=include.docs)
-    return(json)
+  query=list(
+    'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
+    'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
+  )
+    print('get.grid.file.from.couch')
+    print(query)
+  json <- rcouchutils::couch.allDocs(config$couchdb$grid_detectors , query=query, include.docs=include.docs)
+  return(json)
+
 }
 
 ##' Get the AADT value for a grid cell from CouchDB
@@ -83,8 +80,9 @@ get.grid.aadt.from.couch <- function(i,j,year){
     ## fixme move this config global to a parameter
     json <- rcouchutils::couch.get(config$couchdb$grid_detectors ,
                                    docname=doc)
-  return(json)
+    return(json)
 }
+
 ##' Get a raft of grids
 ##'
 ##' Get a raft of grids. Lots of them.  pass a subset
@@ -195,9 +193,11 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month){
                                           start.date,
                                           end.date,
                                           include.docs=FALSE)
-    if('error' %in% names(json.data) || length(json.data$rows)<2) next
+    if('error' %in% names(json.data) || length(json.data$rows)<2)
+        next
     df.grid.subset$rows[i] <- length(json.data$rows)
   }
+    print(df.grid.subset$rows)
   df.grid.subset$rows
 }
 

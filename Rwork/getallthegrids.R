@@ -1,3 +1,26 @@
+## need node_modules directories
+dot_is <- getwd()
+node_paths <- dir(paste(dot_is,'/..',sep=''),pattern='\\.Rlibs',
+                  full.names=TRUE,recursive=TRUE,
+                  ignore.case=TRUE,include.dirs=TRUE,
+                  all.files = TRUE)
+path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
+lib_paths <- .libPaths()
+.libPaths(c(path, lib_paths))
+
+print(.libPaths())
+
+## need env for test file
+config_file <- Sys.getenv('R_CONFIG')
+
+if(config_file ==  ''){
+    config_file <- '../config.json'
+}
+print(paste ('using config file =',config_file))
+config <- rcouchutils::get.config(config_file)
+
+
+
 source('./fetchFiles.R')
 
 ## get all the grids in a county
@@ -146,16 +169,23 @@ runme <- function(){
   year = Sys.getenv(c("CARB_GRID_YEAR"))
   gridenv = Sys.getenv(c("AIRBASIN"))
   basin = gridenv[1]
-  df.grid <- get.grids.with.detectors(basin)
+    df.grid <- get.grids.with.detectors(basin)
+    print('dim df grid')
+    print(dim(df.grid))
+
   df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
   df.hpms.grids <- get.grids.with.hpms(basin)
+    print('dim df hpms grid')
+    print(dim(df.hpms.grids))
+
   df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
   months=1:12
   for(month in months){
 
       ## cluster **ONLY** the grid cells with valid data
-      data.count <- get.rowcount.of.grids(df.grid,month=month,year=year,local=TRUE)
+      data.count <- get.rowcount.of.grids(df.grid,month=month,year=year)
+
       df.grid.data <- df.grid[data.count>0,]
 
       ## want clusters of about 20
@@ -173,7 +203,7 @@ runme <- function(){
           print(paste('cluster',cl.i,'of',numclust))
           grid.idx <- cl$clustering==cl.i
           hpms.idx <- assign.cluster$V1==cl.i
-          process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month,local=TRUE)
+          process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month)
         }
      }else{
        print('skipping, no data')

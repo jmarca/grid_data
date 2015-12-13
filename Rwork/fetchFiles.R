@@ -5,15 +5,16 @@ library(spTimer)
 
 grid.couch.db <- 'carb%2fgrid%2fstate4k'
 
+
 get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
 
    load.remote.file(server,service='grid',root=paste('hourly',i,sep='/'),file=paste(j,'json',sep='.'))
 }
 
 # one connection per thread
-couchdb.handle = getCurlHandle()
+# couchdb.handle = getCurlHandle()
 
-get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE){
+get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
 
   start.date.part <- start
   end.date.part <-  end
@@ -25,21 +26,23 @@ get.grid.file.from.couch <- function(i,j,start,end,local=TRUE,include.docs=TRUE)
   query=list(
     'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
     'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
-    )
-  json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, local=local,include.docs=include.docs, h=couchdb.handle)
+  )
+    print('get.grid.file.from.couch')
+    print(query)
+  json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, include.docs=include.docs)
   return(json)
 }
 
-get.grid.aadt.from.couch <- function(i,j,year,local=TRUE){
+get.grid.aadt.from.couch <- function(i,j,year){
     ## when bug is fixed, make this i,j,year,aadt
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
     print(doc)
-  json <- rcouchutils::couch.get(grid.couch.db , docname=doc, local=local, h=couchdb.handle)
+  json <- rcouchutils::couch.get(grid.couch.db , docname=doc)
   return(json)
 }
 
-get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
+get.raft.of.grids <- function(df.grid.subset,year,month){
 
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
@@ -56,8 +59,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
     json.data <- get.grid.file.from.couch(df.grid.subset[i,'i_cell'],
                                           df.grid.subset[i,'j_cell'],
                                           start.date,
-                                          end.date,
-                                          local=local)
+                                          end.date)
     if('error' %in% names(json.data) || length(json.data$rows)<2) next
     print(length(json.data$rows))
     df <- parseGridRecord(json.data)
@@ -111,7 +113,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month,local=TRUE){
 }
 
 
-get.rowcount.of.grids <- function(df.grid.subset,year,month,local=TRUE){
+get.rowcount.of.grids <- function(df.grid.subset,year,month){
 
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
@@ -128,11 +130,12 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month,local=TRUE){
                                           df.grid.subset[i,'j_cell'],
                                           start.date,
                                           end.date,
-                                          local=local,
                                           include.docs=FALSE)
-    if('error' %in% names(json.data) || length(json.data$rows)<2) next
+    if('error' %in% names(json.data) || length(json.data$rows)<2)
+        next
     df.grid.subset$rows[i] <- length(json.data$rows)
   }
+    print(df.grid.subset$rows)
   df.grid.subset$rows
 }
 

@@ -51,8 +51,8 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
     }
 
   query=list(
-    'startkey'=paste('%22',paste(i,j,start.date.part,sep='_'),'%22',sep=''),
-    'endkey'=paste('%22',paste(i,j,end.date.part,sep='_'),'%22',sep='')
+    'startkey'=paste(paste(i,j,start.date.part,sep='_'),sep=''),
+    'endkey'=paste(paste(i,j,end.date.part,sep='_'),sep='')
   )
     print('get.grid.file.from.couch')
     print(query)

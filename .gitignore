@@ -9,6 +9,5 @@ Rwork/*.pdf
 *~
 .Rproj.user
 .Rhistory
-.RData
 .tern-port
 config.json

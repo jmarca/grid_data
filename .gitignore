@@ -7,3 +7,4 @@ Rwork/*.pdf
 /test.config.json
 /config.json
 *~
+.Rhistory

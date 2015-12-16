@@ -1,9 +1,5 @@
-## crazy global, just hanging out here.
-## shouldn't this be in the config file?
-
-
-## library(doMC) try using doMC::
-doMC::registerDoMC(3)
+library(doMC)
+registerDoMC(1)
 
 curlH <- RCurl::getCurlHandle()
 
@@ -69,7 +65,9 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un){
                                                         sep='_')
     }
 
-    predictions <- plyr::llply(var.models,data.predict.generator(prediction.grid,ts.un),.parallel=TRUE)
+    predictions <- plyr::llply(var.models,data.predict.generator(prediction.grid,ts.un)
+                              ##,.parallel=TRUE
+                               )
 
     for(model.name in names(var.models)){
         grid.pred <- predictions[[model.name]]
@@ -191,6 +189,7 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
     if(length(picked)>1)    picked = sample(picked) ## randomly permute
 
     if(length(unique(df.fwy.data$s.idx))<2){
+        print('buggy version')
         ## just assign frac to hpms cells
         for(sim.set in picked){
             df.pred.grid <- df.hpms.grid.locations[sim.set,]
@@ -217,8 +216,9 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
                                  'nhh.aadt.frac'='nhh.aadt.frac'),
                             function(variable){
                                 data.model(df.fwy.data,formula=formula(paste(variable,1,sep='~')))
-                            },
-                            .parallel=TRUE)
+                            }
+                            ##.parallel=TRUE
+                            )
         # gc()
         ## need to limit...can be 300+, eats up too much RAM
         ## group.loop(df.hpms.grid.locations[picked,],var.models,ts.ts,ts.un)
@@ -255,12 +255,17 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
     ## because javascript, the month is zero based.  so if month ==
     ## month, it is actually the wrong month (next month)
     drop <- df.data$month==month
-    ## plyr::d_ply(df.data[!drop,], plyr::.(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages=c('spTimer','plyr','RJSONIO','RCurl')), df.hpms.grids,year)
+
     df.kp <- df.data[!drop,]
-    for(dy in 1:max(df.kp$day)){
-        print(paste('processing',dy))
-        day.idx <-  df.kp$day == dy
-        data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
-    }
+
+    plyr::d_ply(df.kp, plyr::.(day), data.model.and.predict,
+                .parallel = TRUE,
+                .progress = "none", df.hpms.grids,year)
+
+    ## for(dy in 1:max(df.kp$day)){
+    ##     print(paste('processing',dy))
+    ##     day.idx <-  df.kp$day == dy
+    ##     data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
+    ## }
 
 }

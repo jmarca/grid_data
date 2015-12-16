@@ -106,7 +106,7 @@ get.grids.with.hpms <- function(basin){
                        ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
-    print(grid.query)
+    ## print(grid.query)
     rs <- dbSendQuery(spatialvds.con,grid.query)
     df.grid <- fetch(rs,n=-1)
     df.grid
@@ -154,7 +154,7 @@ get.grids.with.detectors <- function(basin){
                        ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
-    print(grid.query)
+    ## print(grid.query)
     rs <- dbSendQuery(spatialvds.con,grid.query)
     df.grid <- fetch(rs,n=-1)
     df.grid

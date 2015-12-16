@@ -255,11 +255,10 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
     drop <- df.data$month==month
     ## plyr::d_ply(df.data[!drop,], plyr::.(day), data.model.and.predict, .parallel = TRUE, .progress = "none", .paropts = list(.packages=c('spTimer','plyr','RJSONIO','RCurl')), df.hpms.grids,year)
     df.kp <- df.data[!drop,]
-                                        #for(dy in 1:max(df.kp$day)){
-    dy <- 1 ## testing
+    for(dy in 1:max(df.kp$day)){
         print(paste('processing',dy))
         day.idx <-  df.kp$day == dy
         data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
-                                        #}
+    }
 
 }

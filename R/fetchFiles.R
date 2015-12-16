@@ -27,8 +27,6 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
     'startkey'=paste(paste(i,j,start.date.part,sep='_'),sep=''),
     'endkey'=paste(paste(i,j,end.date.part,sep='_'),sep='')
   )
-    print('get.grid.file.from.couch')
-    print(query)
   json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, include.docs=include.docs)
   return(json)
 }
@@ -138,38 +136,3 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month){
     print(df.grid.subset$rows)
   df.grid.subset$rows
 }
-
-## data.model <- function(df.mrg,formula=n.aadt.frac~1){
-
-##   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-##   post.gp.fit <- spT.Gibbs(formula=formula,data=df.mrg,model="GP",coords=site.coords,tol.dist=0.005,distance.method="geodetic:km",report=10,scale.transform="SQRT")
-##   post.gp.fit
-
-## }
-
-## data.predict <- function(model,df.pred.grid,ts.un){
-##   n.sites <- length(df.pred.grid[,1])
-##   df.pred.grid$s.idx <- 1:n.sites
-
-##   ts.psx <- as.POSIXct(ts.un)
-
-##   n.times <- length(ts.un)
-##   dat.mrg <- matrix(NA,n.sites*n.times,8)
-##   dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
-##   dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
-##   dat.mrg[,3] <- rep(ts.un$mon,n.sites)
-##   dat.mrg[,4] <- rep(ts.un$mday,n.sites)
-##   dat.mrg[,5] <- rep(ts.un$hour,n.sites)
-##   dat.mrg[,6] <- rep(ts.psx,n.sites)
-##   dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
-##   dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
-##   dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
-##   df.mrg <- as.data.frame(dat.mrg)
-##   df.mrg$n.aadt.frac <- NA
-##   df.mrg$hh.aadt.frac <- NA
-##   df.mrg$hh.aadt.frac <- NA
-##   df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
-##   grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-##   print(grid.coords)
-##   grid.pred<-predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
-## }

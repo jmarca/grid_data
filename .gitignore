@@ -8,3 +8,6 @@ Rwork/*.pdf
 /config.json
 *~
 .Rhistory
+.Rproj.user
+.RData
+/.cookies.txt

@@ -1,5 +1,3 @@
-library(RJSONIO)
-library(plyr)
 
 parseImputeRecord <- function(rawjson){
   ## trim it down
@@ -13,11 +11,13 @@ parseImputeRecord <- function(rawjson){
   df[,3:17] <- apply(df[,3:17],2,as.numeric)
   df$dashts <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
 }
+
 default.header =c("ts","freeway","n","hh","not_hh","o","avg_veh_spd","avg_hh_weight","avg_hh_axles","avg_hh_spd","avg_nh_weight","avg_nh_axles","avg_nh_spd","miles","lane_miles","detector_count","detectors")
+
 parseGridRecord <- function(rawjson){
   ## trim it down
   rows = rawjson$rows
-  df <- ldply(rows,.fun=function(x){
+  df <- plyr::ldply(rows,.fun=function(x){
     dd <- unlist(x$doc$data)[1:16]
     daadt <- unlist(x$doc$aadt_frac)
     dicell <- unlist(x$doc$i_cell)
@@ -45,8 +45,8 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   numeric.cols <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE,invert=TRUE)
   aadt.cols = grep(pattern="^(n|hh|nhh)",x=colnames[numeric.cols],perl=TRUE)
   numeric.data.json <- function(row){
-    cellvals = toJSON(row[c(1,2)],collapse='')
-    aadtvals = toJSON(row[aadt.cols],collapse='')
+    cellvals = RJSONIO::toJSON(row[c(1,2)],collapse='')
+    aadtvals = RJSONIO::toJSON(row[aadt.cols],collapse='')
     cellvals = gsub("\\s+"," ",x=cellvals,perl=TRUE)
     cellvals = gsub("{|}","",x=cellvals,perl=TRUE)
     aadtvals = gsub("\\s+"," ",x=aadtvals,perl=TRUE)
@@ -55,7 +55,7 @@ dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   num.data <- apply(chunk[,numeric.cols],1,numeric.data.json)
   text.data <- list()
   if(length(text.cols) < 2){
-    text.data <- toJSON(chunk[,text.cols],collapse='')
+    text.data <- RJSONIO::toJSON(chunk[,text.cols],collapse='')
   }else{
     text.data <- apply(chunk[,text.cols],1,toJSON,collapse='')
   }
@@ -75,7 +75,7 @@ parseAADTRecord <- function(rawjson){
                    aadt.nhh = 0
                    )
   ## sum these up
-  l_ply(rawjson$aadt,.fun=function(x){
+  plyr::l_ply(rawjson$aadt,.fun=function(x){
     dfaadt$aadt.n <<- dfaadt$aadt.n + x$n[1]
     dfaadt$aadt.hh <<-dfaadt$aadt.hh + x$hh[1]
     dfaadt$aadt.nhh <<- dfaadt$aadt.nhh + x$not_hh[1]
@@ -86,10 +86,10 @@ parseAADTRecord <- function(rawjson){
 
 parseGridFile <- function(jsonfile){
   ## get it
-  rawjson <- fromJSON(jsonfile,simplify=FALSE)
+  rawjson <- RJSONIO::fromJSON(jsonfile,simplify=FALSE)
   ## trim it down
   rows <- rawjson$features[[1]]$properties$data
-  df <- ldply(rows,.fun=function(x){unlist(x)[1:16]})
+  df <- plyr::ldply(rows,.fun=function(x){unlist(x)[1:16]})
   names(df) <- default.header[1:16]
   df[,3:16] <- apply(df[,3:16],2,as.numeric)
   df[,2] <- as.factor(df[,2])

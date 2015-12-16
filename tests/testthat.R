@@ -1,4 +1,4 @@
 library(testthat)
-library(griddata)
+library(grid.data)
 
-test_check("griddata")
+test_check("grid.data")

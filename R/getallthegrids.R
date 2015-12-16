@@ -26,15 +26,20 @@ config <- rcouchutils::get.config(config_file)
 source('./fetchFiles.R')
 
 ## get all the grids in a county
-library(cluster)
+## library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
-## requires environment variables be set externally
-psqlenv = Sys.getenv(c("PSQL_HOST", "PSQL_USER", "PSQL_PASS","PSQL_PORT"))
-psql.port = psqlenv[4]
-if(is.na(psql.port)){
-  psql.port=5432
-}
+spatialvds.con <-  dbConnect(m
+                  ,user=config$postgresql$auth$username
+                  ,host=config$postgresql$host
+                  ,dbname=config$postgresql$db)
+
+## spatialvds.con <-  dbConnect(m
+##                   ,user=psqlenv[2]
+##                   ,password=psqlenv[3]
+##                   ,host=psqlenv[1]
+##                   ,port=psql.port
+##                   ,dbname="spatialvds")
 ##' A little script to save typing out the same bit of sql
 ##'
 ##' @title select.grids.in.basin
@@ -61,6 +66,7 @@ select.grids.in.basin <- function(basin){
 ##' @param basin the name of the basin (two letter abbreviation)
 ##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
 ##' @author James E. Marca
+
 get.all.the.grids <- function(basin){
     ## assume area is a county for now
 
@@ -207,19 +213,21 @@ compute.manhattan.distance <- function(a,b){
 ##' @return a function that will do the assigning.
 ##' @author James E. Marca
 assign.hpms.grid.cell <- function(centers){
-
-##' assign a cell to a cluster
-##'
-##' This is a function that is inside.
-##' @title assign.cell
-##' @param hpms.cell the current cell that needs assigning
-##' @return the assigned cluster
-##' @author James E. Marca
-    assign.cell <- function(hpms.cell){
-        centers.distance <- ddply(centers,.(lat,lon,clustering),.fun=function(a){compute.manhattan.distance(a,hpms.cell)})
-        min.distance <- min(centers.distance$V1)
-        assigned.cluster <- centers.distance$clustering[min.distance==centers.distance$V1]
-        return(assigned.cluster[1]) ## prevent duplicates
+    assign.cell <- function(lon,lat=NULL){
+        if(is.data.frame(lon)){
+            lat <- lon$lat
+            lon <- lon$lon
+        }
+        ## centers.distance <- ddply(centers,.(lat,lon,clustering),.fun=function(a){compute.manhattan.distance(a,hpms.cell)})
+        centers.distance <- as.matrix(dist(matrix(c(lon,as.vector(centers$lon),lat,as.vector(centers$lat)),ncol=2,byrow=FALSE)))[,1]
+        ## drop own distance
+        centers.distance <-  centers.distance[-1]
+        ## pick off which cluster has the min distance, ignoring ties
+        assigned.cluster <- centers$clustering[centers.distance == min(centers.distance)]
+        assigned.cluster <- c(assigned.cluster)[1]
+        ##return (assigned.cluster)
+        return(assigned.cluster)
+        ##return(data.frame(cluster=assigned.cluster))
     }
 }
 
@@ -263,14 +271,22 @@ runme <- function(){
         cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
         centers <- as.data.frame(cl$medoids)
         centers$clustering = cl$clustering[rownames(cl$medoids)]
-        assign.cluster <- ddply(df.hpms.grids,.(i_cell,j_cell,lon,lat,geo_id),.fun=assign.hpms.grid.cell(centers))
+
+          ## create the assigning function based on the clustered centers
+        ascl <- assign.hpms.grid.cell(centers)
+        df.hpms.grids$cluster <- -1
+        for(i in 1:length(df.hpms.grids$lat)){
+            df.hpms.grids$cluster[i] <- ascl(df.hpms.grids[i,])
+        }
+
+
         print(paste('processing',basin,year))
 
         for(cl.i in 1:numclust){
           print(paste('cluster',cl.i,'of',numclust))
           grid.idx <- cl$clustering==cl.i
-          hpms.idx <- assign.cluster$V1==cl.i
-          process.data.by.day(df.grid.data[grid.idx,],assign.cluster[hpms.idx,],year,month)
+          hpms.idx <- df.hpms.grids$cluster==cl.i
+          process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year,month)
         }
      }else{
        print('skipping, no data')

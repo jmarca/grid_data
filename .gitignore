@@ -11,3 +11,4 @@ Rwork/*.pdf
 .Rhistory
 .tern-port
 config.json
+/.cookies.txt

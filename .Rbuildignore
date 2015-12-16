@@ -4,3 +4,10 @@
 ^devel_scratch
 ^config\.json$
 ^test\.config\.json$
+.*cookies\.txt$
+package\.json$
+^test$
+node_modules.*
+node_modules$
+^Rtest\.R$
+^Rinstall\.R$

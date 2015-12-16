@@ -59,7 +59,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
                                           start.date,
                                           end.date)
     if('error' %in% names(json.data) || length(json.data$rows)<2) next
-    print(length(json.data$rows))
+    ## print(length(json.data$rows))
     df <- parseGridRecord(json.data)
     rm(json.data)
     ## df$Latitude  <- df.grid.subset[i,'lat']
@@ -79,10 +79,10 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
   if(dim(df.bind)[1]>0){
     ## need time to be uniform for all sites
     ts.un <- sort(unique(df.bind$ts2))
-    print(summary(ts.un))
-    print('do posix')
+    ##print(summary(ts.un))
+    ##print('do posix')
     ts.psx <<- as.POSIXct(ts.un)
-    print('done posix')
+    ##print('done posix')
 
     site.lat.lon <- unique(df.bind[,c('s.idx','i_cell','j_cell')])
     n <- length(ts.un)
@@ -99,11 +99,11 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
     dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct')##,'i_cell','j_cell')
     df.mrg <- as.data.frame(dat.mrg)
     ## first, slap in the correct i_cell, j_cell, for every cell
-    print('adding i_cell, j_cell back in')
+    ##print('adding i_cell, j_cell back in')
     df.mrg   <- merge(df.mrg,site.lat.lon  ,all=TRUE,by=c("s.idx"))
-    print('merging data from couchdb')
+    ##print('merging data from couchdb')
     df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
-    print('merging Lat, Lon')
+    ##print('merging Lat, Lon')
     df.mrg <- merge(df.mrg,df.grid.subset,all.x=TRUE,all.y=FALSE,by=c('i_cell','j_cell'))
     names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
   }
@@ -133,6 +133,6 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month){
         next
     df.grid.subset$rows[i] <- length(json.data$rows)
   }
-    print(df.grid.subset$rows)
+    ##print(df.grid.subset$rows)
   df.grid.subset$rows
 }

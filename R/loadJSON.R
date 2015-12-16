@@ -34,7 +34,7 @@ parseGridRecord <- function(rawjson){
 
 aadt.cols <- c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')
 
-dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
+_dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
   ## must split out text and numeric, so numbers don't get promoted to text
   if( ! '_id' %in% names(chunk) ){
     chunk[,'_id']=paste(chunk$geom_id,chunk$ts,sep='_')

@@ -45,7 +45,7 @@ get.all.the.grids <- function(basin){
   ## form a sql command
 
   grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and grids.geom4326 && basins.geom_4326" )
-  print(wim.query)
+  ##print(wim.query)
   rs <- dbSendQuery(con,wim.query)
   df.wim <- fetch(rs,n=-1)
   df.wim
@@ -66,7 +66,7 @@ grid.query <- paste(grid.with
                     ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
                     ," group by i_cell,j_cell,lon,lat"
                     ,sep='')
-  print(grid.query)
+  ##print(grid.query)
   rs <- dbSendQuery(spatialvds.con,grid.query)
   df.grid <- fetch(rs,n=-1)
   df.grid
@@ -91,7 +91,7 @@ grid.query <- paste(grid.with
                     ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
                     ," group by i_cell,j_cell,lon,lat"
                     ,sep='')
-  print(grid.query)
+  ##print(grid.query)
   rs <- dbSendQuery(spatialvds.con,grid.query)
   df.grid <- fetch(rs,n=-1)
   df.grid
@@ -112,7 +112,7 @@ grid.query <- paste(grid.with
                     ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
                     ," group by i_cell,j_cell,lon,lat"
                     ,sep='')
-  print(grid.query)
+  ##print(grid.query)
   rs <- dbSendQuery(spatialvds.con,grid.query)
   df.grid <- fetch(rs,n=-1)
   df.grid

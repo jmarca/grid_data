@@ -172,6 +172,12 @@ assign.hpms.grid.cell <- function(centers){
 }
 
 source('./data.model.R')
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title
+##' @return
+##' @author James E. Marca
 runme <- function(){
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))

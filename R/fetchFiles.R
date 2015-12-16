@@ -1,7 +1,7 @@
 library(spTimer)
 ## source('../components/jmarca-rstats_couch_utils/couchUtils.R')
 ## source('../components/jmarca-rstats_remote_files/remoteFiles.R')
-## source('./loadJSON.R')
+source('./loadJSON.R')
 
 grid.couch.db <- 'carb%2fgrid%2fstate4k'
 

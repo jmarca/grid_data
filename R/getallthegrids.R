@@ -231,7 +231,7 @@ assign.hpms.grid.cell <- function(centers){
     }
 }
 
-## source('./data.model.R')
+source('./data.model.R')
 
 ##' The main function that does everything.
 ##'

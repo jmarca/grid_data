@@ -5,6 +5,8 @@
 ## library(doMC) try using doMC::
 doMC::registerDoMC(3)
 
+curlH <- RCurl::getCurlHandle()
+
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
@@ -92,7 +94,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un){
 
         print(paste(sim.site,
                     storedf[[1]]['_id']))
-        res <- rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,storedf)
+        res <- rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,storedf,h=curlH)
         doccount <- doccount + res
     }
     ## print(paste('saved',doccount,'docs'))
@@ -166,7 +168,7 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
     result = rcouchutils::couch.allDocsPost(db=hpms.grid.couch.db,
                                             keys=couch.test.docs,
-                                            include.docs=FALSE)
+                                            include.docs=FALSE,h=curlH)
     rows = result$rows
     print(length(rows))
     hpmstodo <- picker < 0 # default false
@@ -205,7 +207,7 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
                 rnm = names(df.all.predictions)
                 names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
                 save.these = ! is.na(df.all.predictions$n)
-                rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,])
+                rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],h=curlH)
             }
         }
     }else{

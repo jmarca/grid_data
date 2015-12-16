@@ -1,7 +1,7 @@
-# library(spTimer)
-# source('../components/jmarca-rstats_couch_utils/couchUtils.R')
-# source('../components/jmarca-rstats_remote_files/remoteFiles.R')
-# source('./loadJSON.R')
+library(spTimer)
+## source('../components/jmarca-rstats_couch_utils/couchUtils.R')
+## source('../components/jmarca-rstats_remote_files/remoteFiles.R')
+source('./loadJSON.R')
 
 
 ##' Get the grid file from a remote server.

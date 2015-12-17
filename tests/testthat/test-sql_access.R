@@ -9,8 +9,6 @@ test_that("select statement has right form",{
 
 test_that("get grids",{
     basin <-  'SJV'
-    df.grids <- get.all.the.grids(basin)
-    expect_equal(dim(df.grids),c(3655,4))
 
     df.grid.detectors <- get.grids.with.detectors(basin)
     expect_equal(dim(df.grid.detectors),c(176,4))

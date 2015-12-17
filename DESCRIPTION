@@ -18,5 +18,6 @@ Imports: cluster,
     rjson,
     dplyr,
     RJSONIO,
-    RCurl
+    RCurl,
+    pryr
 Suggests: testthat

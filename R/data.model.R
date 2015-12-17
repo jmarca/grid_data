@@ -1,6 +1,3 @@
-library(doMC)
-registerDoMC(1)
-
 curlH <- RCurl::getCurlHandle()
 
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
@@ -186,17 +183,17 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
                                             keys=couch.test.docs,
                                             include.docs=FALSE,h=curlH)
     rows = result$rows
-    print(length(rows))
+    ## print(length(rows))
     hpmstodo <- picker < 0 # default false
     for(i in length(couch.test.docs)){
         row = rows[[i]]
         if('error' %in% names(row)){
             ## error means doc not found, need to do this grid
-            hpmstodo[cell] <- TRUE
+            hpmstodo[i] <- TRUE
             ##true means need to do this document
          }
     }
-
+    print(couch.test.date)
     return (df.hpms.grid.locations[hpmstodo,])
 
 }
@@ -266,7 +263,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     runs.result <- try (
         ## this used to use plyr, but made it a loop for now to help debugging
         for (i in 1:max(runs.index)){
-            print(paste('run',i,'memory',pryr::mem_used()))
+            ## print(paste('run',i,'memory',pryr::mem_used()))
             idx <- runs.index == i
             group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un)
 
@@ -313,15 +310,13 @@ processing.sequence <- function(df.fwy.data,
                                 df.hpms.grid.locations,
                                 year){
 
-    print(paste('processing.sequence memory',pryr::mem_used()))
 
     hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
-    hpms <- necessary.dates(df.fwy.data,hpms,year)
+    hpms <- necessary.grids(df.fwy.data,hpms,year)
     if(length(hpms[,1])<1){
-        print(paste('all done',couch.test.date))
+        print(paste('all done'))
         return ()
     }
-    print(paste('still to do',length(hpms[,1]),couch.test.date))
     if(length(unique(df.fwy.data$s.idx))<2){
         ## one cell is not enough freeway grid cells to build a
         ## spatial model.
@@ -336,7 +331,7 @@ processing.sequence <- function(df.fwy.data,
         predict.hpms.data(df.fwy.data,hpms,var.models,year)
 
     }
-    print(paste('end processing.sequence memory',pryr::mem_used()))
+    ## print(paste('end processing.sequence memory',pryr::mem_used()))
     return()
 }
 

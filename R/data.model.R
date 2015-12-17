@@ -134,7 +134,21 @@ rearrange_data <- function(col.names){
 }
 
 
-## send a chunk of data to this function
+
+
+
+##' Send a chunk of data to this function to model and predict
+##'
+##' This function will create a model, then predict using that model.
+##' For some reason it blows up RAM.
+##'
+##' @title data.model.and.predict
+##' @param df.fwy.data
+##' @param df.hpms.grid.locations
+##' @param year
+##' @return
+##' @author James E. Marca
+##'
 data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
 
     ## handle time from df.fwy.data
@@ -159,7 +173,7 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
     ## set up hpms grid cells to check, maybe process
     geoids <- df.fwy.data$geo_id ## sort(unique(paste(df.fwy.data$i_cell, df.fwy.data$j_cell,'_')))
     overlap <- df.hpms.grid.locations$geo_id %in% geoids
-    df.hpms.grid.locations <- df.hpms.grid.locations[!overlap,]
+    no.overlap.hpms.locations <- df.hpms.grid.locations[!overlap,]
 
 
     picker <- 1:length(df.hpms.grid.locations[,1])
@@ -257,6 +271,13 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
     drop <- df.data$month==month
 
     df.kp <- df.data[!drop,]
+
+    df.kp
+    plyr::each
+    dplyr::%>%
+        dplyr::group_by(day)
+    dplyr::%>%
+        dplyr::do()
 
     plyr::d_ply(df.kp, plyr::.(day), data.model.and.predict,
                 .parallel = TRUE,

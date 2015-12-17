@@ -1,3 +1,6 @@
+library(doMC)
+registerDoMC(2)
+
 ## need node_modules directories
 dot_is <- getwd()
 node_paths <- dir(paste(dot_is,'/..',sep=''),pattern='\\.Rlibs',

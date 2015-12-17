@@ -133,48 +133,52 @@ rearrange_data <- function(col.names){
 
 }
 
-
-
-
-
-##' Send a chunk of data to this function to model and predict
+##' Omit grid cells in HPMS data that overlap existing fwy grids
 ##'
-##' This function will create a model, then predict using that model.
-##' For some reason it blows up RAM.
+##' @title no.overlap
+##' @param df.fwy.data
+##' @param df.hpms.grid.locations
+##' @return less than or equal to df.hpms.grid.locations
+##' @author James E. Marca
+no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
+    geoids <- df.fwy.data$geo_id ## sort(unique(paste(df.fwy.data$i_cell, df.fwy.data$j_cell,'_')))
+    overlap <- df.hpms.grid.locations$geo_id %in% geoids
+    return(df.hpms.grid.locations[!overlap,])
+}
+
+##' Determine the grids that need to be processed
 ##'
-##' @title data.model.and.predict
+##' Any grid with midnight on the current day in the DB does not need
+##' doing for the day.  Any grid cell without midnight stored in the
+##' DB is assumed to need processing.
+##'
+##' @title necessary.grids
 ##' @param df.fwy.data
 ##' @param df.hpms.grid.locations
 ##' @param year
-##' @return
+##' @return a possibly reduced list of df.hpms.grid.locations
 ##' @author James E. Marca
-##'
-data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
+necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
+
 
     ## handle time from df.fwy.data
-    ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
-    ts.un <- sort(unique(ts2))
-    ts.ct <- sort(unique(df.fwy.data$tsct))
-    ts.ts = sort(unique(df.fwy.data$ts))
-    n.times = length(ts.un)
 
     ## set up date to check if data in couchdb for hpms grid
     checkday <- min(df.fwy.data$day)
     if(checkday<10) checkday <- paste('0',checkday,sep='')
-    checkmonth <- df.fwy.data$month[1] + 1 ## month is one less than month, because javascript
+    checkmonth <- df.fwy.data$month[1] + 1
+    ## month is one less than month, because javascript
     if(checkmonth < 10) checkmonth <- paste('0',checkmonth,sep='')
     ## form date part of checking URL for couchdb
 
-    # couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00%3A00",sep='%20')
     couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00:00",sep=' ')
+    ## note just checking a single date, the zero hour of the day.  If
+    ## not there, assume whole day is missing.  If there, assume whole
+    ## day is there too.
+    ##
+    ## couchdb library routine will escape ascii stuff if needed.
 
     print(paste('checking',couch.test.date))
-
-    ## set up hpms grid cells to check, maybe process
-    geoids <- df.fwy.data$geo_id ## sort(unique(paste(df.fwy.data$i_cell, df.fwy.data$j_cell,'_')))
-    overlap <- df.hpms.grid.locations$geo_id %in% geoids
-    no.overlap.hpms.locations <- df.hpms.grid.locations[!overlap,]
-
 
     picker <- 1:length(df.hpms.grid.locations[,1])
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
@@ -184,85 +188,168 @@ data.model.and.predict <- function(df.fwy.data,df.hpms.grid.locations,year){
     rows = result$rows
     print(length(rows))
     hpmstodo <- picker < 0 # default false
-    for(cell in picker){
-        row = rows[[cell]]
+    for(i in length(couch.test.docs)){
+        row = rows[[i]]
         if('error' %in% names(row)){
-            hpmstodo[cell] <- TRUE  ##true means need to do this document
-            print(df.hpms.grid.locations[cell,])
+            ## error means doc not found, need to do this grid
+            hpmstodo[cell] <- TRUE
+            ##true means need to do this document
          }
     }
 
-    if(length(picker[hpmstodo])<1){
-        print(paste('all done',couch.test.date))
-        return ()
-    }
-    picked = picker[hpmstodo]
-    print(paste('still to do',length(picked),couch.test.date))
-
-
-    if(length(picked)>1)    picked = sample(picked) ## randomly permute
-
-    if(length(unique(df.fwy.data$s.idx))<2){
-        print('buggy version')
-        ## just assign frac to hpms cells
-        for(sim.set in picked){
-            df.pred.grid <- df.hpms.grid.locations[sim.set,]
-            df.all.predictions <- data.frame('ts'= ts.ts)
-            df.all.predictions$i_cell <- df.hpms.grid.locations[sim.set,'i_cell']
-            df.all.predictions$j_cell <- df.hpms.grid.locations[sim.set,'j_cell']
-            df.all.predictions$geom_id <- df.hpms.grid.locations[sim.set,'geo_id']
-
-            for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
-                df.all.predictions[,variable] <- df.fwy.data[,variable]
-            }
-            if(dim(df.all.predictions)[2]>4){
-                ## now dump that back into couchdb
-                rnm = names(df.all.predictions)
-                names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-                save.these = ! is.na(df.all.predictions$n)
-                rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],h=curlH)
-            }
-        }
-    }else{
-        df.pred.grid <- df.hpms.grid.locations[picked,] ## the grid cells I need to predict
-        var.models <- plyr::llply(list('n.aadt.frac'='n.aadt.frac',
-                                 'hh.aadt.frac' ='hh.aadt.frac',
-                                 'nhh.aadt.frac'='nhh.aadt.frac'),
-                            function(variable){
-                                data.model(df.fwy.data,formula=formula(paste(variable,1,sep='~')))
-                            }
-                            ##.parallel=TRUE
-                            )
-        # gc()
-        ## need to limit...can be 300+, eats up too much RAM
-        ## group.loop(df.hpms.grid.locations[picked,],var.models,ts.ts,ts.un)
-
-        num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
-        num.runs = ceiling(length(picked)/num.cells) ## manage RAM
-        print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
-
-        runs.index <- rep_len(1:num.runs,length=length(picked))
-        runs.result <- try (
-            ## this used to use plyr, but made it a loop for now to help debugging
-            for (i in 1:max(runs.index)){
-                idx <- runs.index == i
-                group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un)
-
-            }
-            )
-        if(class(runs.result) == "try-error"){
-            print ("\n Error predicting, try more groups? \n")
-            print(runs.result)
-            stop()
-        }
-
-
-    }
+    return (df.hpms.grid.locations[hpmstodo,])
 
 }
 
 
+##' Assign a fraction because just one freeway cell
+##'
+##' @title assign.fraction
+##' @param df.fwy.data
+##' @param df.hpms.grid.locations
+##' @param year
+##' @return nothing
+##' @author James E. Marca
+assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year){
+    print('buggy version')
+    ## just assign frac to hpms cells
+    for(sim.set in picked){
+        df.pred.grid <- df.hpms.grid.locations[sim.set,]
+        df.all.predictions <- data.frame('ts'= ts.ts)
+        df.all.predictions$i_cell <- df.hpms.grid.locations[sim.set,'i_cell']
+        df.all.predictions$j_cell <- df.hpms.grid.locations[sim.set,'j_cell']
+        df.all.predictions$geom_id <- df.hpms.grid.locations[sim.set,'geo_id']
 
+        for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
+            df.all.predictions[,variable] <- df.fwy.data[,variable]
+        }
+        if(dim(df.all.predictions)[2]>4){
+            ## now dump that back into couchdb
+            rnm = names(df.all.predictions)
+            names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
+            save.these = ! is.na(df.all.predictions$n)
+            rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],h=curlH)
+        }
+    }
+    return ()
+}
+
+##' Predict fractions at HPMS grid cells based on models
+##'
+##' @title predict.hpms.data
+##' @param df.fwy.data
+##' @param df.hpms.grid.locations
+##' @param var.models
+##' @param year
+##' @return nothing at all
+##' @author James E. Marca
+predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year){
+
+    ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
+    ts.un <- sort(unique(ts2))
+    ts.ct <- sort(unique(df.fwy.data$tsct))
+    ts.ts = sort(unique(df.fwy.data$ts))
+    n.times = length(ts.un)
+
+    picked <- 1:length(df.hpms.grid.locations[,1])
+    if(length(picked)>1)    picked = sample(picked)
+
+    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.runs = ceiling(length(picked)/num.cells) ## manage RAM
+    ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
+
+    runs.index <- rep_len(1:num.runs,length=length(picked))
+
+    ## random permutation of the grid cells I need to predict
+    df.pred.grid <- df.hpms.grid.locations[picked,]
+
+    runs.result <- try (
+        ## this used to use plyr, but made it a loop for now to help debugging
+        for (i in 1:max(runs.index)){
+            print(paste('run',i,'memory',pryr::mem_used()))
+            idx <- runs.index == i
+            group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un)
+
+        }
+    )
+    if(class(runs.result) == "try-error"){
+        print ("\n Error predicting, try more groups? \n")
+        print(runs.result)
+        stop()
+    }
+
+    return ()
+}
+
+##' Model fraction changes in space based on hourly freeway observations
+##'
+##' @title model.fwy.data
+##' @param df.fwy.data
+##' @return the models list
+##' @author James E. Marca
+model.fwy.data <- function(df.fwy.data){
+
+    var.models <- plyr::llply(list('n.aadt.frac'='n.aadt.frac',
+                                   'hh.aadt.frac' ='hh.aadt.frac',
+                                   'nhh.aadt.frac'='nhh.aadt.frac'),
+                              function(variable){
+                                  data.model(df.fwy.data,formula=formula(paste(variable,1,sep='~')))
+                              }
+                              ##.parallel=TRUE
+                              )
+    return (var.models)
+
+}
+
+##' Step through the jobs for modeling and predicting
+##'
+##' @title processing.sequence
+##' @param df.fwy.data
+##' @param df.hpms.grid.locations
+##' @param year
+##' @return nothing at all
+##' @author James E. Marca
+processing.sequence <- function(df.fwy.data,
+                                df.hpms.grid.locations,
+                                year){
+
+    print(paste('processing.sequence memory',pryr::mem_used()))
+
+    hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
+    hpms <- necessary.dates(df.fwy.data,hpms,year)
+    if(length(hpms[,1])<1){
+        print(paste('all done',couch.test.date))
+        return ()
+    }
+    print(paste('still to do',length(hpms[,1]),couch.test.date))
+    if(length(unique(df.fwy.data$s.idx))<2){
+        ## one cell is not enough freeway grid cells to build a
+        ## spatial model.
+        ##
+        ## just assign fraction
+        assign.fraction(df.fwy.data,hpms,year)
+
+    }else{
+        ## model, then predict
+        var.models <- model.fwy.data(df.fwy.data)
+        ## predict
+        predict.hpms.data(df.fwy.data,hpms,var.models,year)
+
+    }
+    print(paste('end processing.sequence memory',pryr::mem_used()))
+    return()
+}
+
+##' Process a month of data day by day
+##'
+##' This can get out of hand.  RAM bug starts here
+##' @title process.data.by.day
+##' @param df.grid
+##' @param df.hpms.grids
+##' @param year
+##' @param month
+##' @return nothing at all
+##' @author James E. Marca
 process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
     print (month)
     df.data <- get.raft.of.grids(df.grid,month=month,year=year)
@@ -272,14 +359,8 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
 
     df.kp <- df.data[!drop,]
 
-    df.kp
-    plyr::each
-    dplyr::%>%
-        dplyr::group_by(day)
-    dplyr::%>%
-        dplyr::do()
-
-    plyr::d_ply(df.kp, plyr::.(day), data.model.and.predict,
+    print(paste('month',month,'memory',pryr::mem_used()))
+    plyr::d_ply(df.kp, plyr::.(day), processing.sequence,
                 .parallel = TRUE,
                 .progress = "none", df.hpms.grids,year)
 
@@ -288,5 +369,5 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
     ##     day.idx <-  df.kp$day == dy
     ##     data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
     ## }
-
+    return ()
 }

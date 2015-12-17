@@ -37,12 +37,6 @@ spatialvds.con <-  dbConnect(m
                   ,host=config$postgresql$host
                   ,dbname=config$postgresql$db)
 
-## spatialvds.con <-  dbConnect(m
-##                   ,user=psqlenv[2]
-##                   ,password=psqlenv[3]
-##                   ,host=psqlenv[1]
-##                   ,port=psql.port
-##                   ,dbname="spatialvds")
 ##' A little script to save typing out the same bit of sql
 ##'
 ##' @title select.grids.in.basin

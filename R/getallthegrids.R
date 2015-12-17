@@ -58,34 +58,6 @@ select.grids.in.basin <- function(basin){
         ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
         ,sep='')
 }
-##' Get all the grids in an airbasin shape
-##'
-##' This function will hit postgresql and fetch all of the grid cells
-##' that lie inside of the passed-in airbasin shape.  If you stare at
-##' the query, you should see that the rule "inside" is that the
-##' centroid of the grid lies inside of the shape.
-##'
-##' @title get.all.the.grids
-##' @param basin the name of the basin (two letter abbreviation)
-##' @return the result of the query:  rows of i_cell,j_cell, grid centroid
-##' @author James E. Marca
-
-get.all.the.grids <- function(basin){
-    ## assume area is a county for now
-
-    ## form a sql command
-
-    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
-    grid.query <- paste(grid.with
-                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                       ," from basingrids"
-                       ,sep='')
-    print(grid.query)
-    rs <- dbSendQuery(spatialvds.con,grid.query)
-    df.grid <- fetch(rs,n=-1)
-    df.grid
-
-}
 
 ##' Get all the grids in an airbasin shape with hpms data
 ##'
@@ -94,7 +66,7 @@ get.all.the.grids <- function(basin){
 ##' the query, you should see that the rule "inside" is that the
 ##' centroid of the grid lies inside of the shape.
 ##'
-##' @title get.all.the.grids
+##' @title get.grids.with.hpms
 ##' @param basin the name of the basin (two letter abbreviation)
 ##' @return the result of the query: rows of i_cell,j_cell, centroid
 ##'     lon, centroid lat
@@ -115,27 +87,6 @@ get.grids.with.hpms <- function(basin){
     df.grid
 }
 
-## not used, and untested, and it was broken when I was editing it
-## just now so commented out
-##
-## get.grids.with.hpms.data <- function(basin){
-##     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
-
-##     ## select grid cells with hpm records in them
-##     grid.query <- paste(grid.with
-##                        ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-##                        ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,"
-##                        ," h.perc_single_unit,h.avg_single_unit,h.perc_combination,h.avg_combination "
-##                        ," from basingrids"
-##                        ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-##                        ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-##                        ," group by i_cell,j_cell,lon,lat"
-##                        ,sep='')
-##     print(grid.query)
-##     rs <- dbSendQuery(spatialvds.con,grid.query)
-##     df.grid <- fetch(rs,n=-1)
-##     df.grid
-## }
 
 ##' Get grid cells overlapping highway detector segments (vds or wim).
 ##'

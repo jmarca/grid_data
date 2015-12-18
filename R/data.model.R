@@ -358,17 +358,22 @@ model.fwy.data <- function(df.fwy.data){
 ##' @param year the year of this analysis
 ##' @return nothing at all
 ##' @author James E. Marca
-processing.sequence <- function(df.fwy.data,
+processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
-                                year){
+                                year,month,day){
 
 
     curlH <- RCurl::getCurlHandle()
-
+    df.fwy.data <- get.raft.of.grids(df.fwy.grid
+                                    ,day=day
+                                    ,month=month
+                                    ,year=year)
     hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
     hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
     if(length(hpms[,1])<1){
         print(paste('all done'))
+        rm(df.fwy.data)
+        rm(curlH)
         return ()
     }
     if(length(unique(df.fwy.data$s.idx))<2){
@@ -386,6 +391,8 @@ processing.sequence <- function(df.fwy.data,
 
     }
 
+    rm(df.fwy.data)
+    rm(curlH)
     print(paste('end processing.sequence memory',pryr::mem_used()))
 
     return()
@@ -406,26 +413,13 @@ processing.sequence <- function(df.fwy.data,
 ##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
-process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
-    print (month)
-    df.data <- get.raft.of.grids(df.grid,month=month,year=year)
-    ## because javascript, the month is zero based.  so if month ==
-    ## month, it is actually the wrong month (next month)
-    drop <- df.data$month==month
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day){
+    print (paste(year,month,day,pryr::mem_used()))
+    ## don't care about true number of days per month
+    processing.sequence(df.grid,df.hpms.grids
+                       ,year=year
+                       ,month=month
+                       ,day=day)
 
-    df.kp <- df.data[!drop,]
-
-    rm (df.data)
-    print(dim(df.kp))
-    print(paste('month',month,'memory',pryr::mem_used()))
-    plyr::d_ply(df.kp, plyr::.(day), processing.sequence,
-                .parallel = TRUE,
-                .progress = "none", df.hpms.grids,year)
-
-    ## for(dy in 1:max(df.kp$day)){
-    ##     print(paste('processing',dy))
-    ##     day.idx <-  df.kp$day == dy
-    ##     data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
-    ## }
     return ()
 }

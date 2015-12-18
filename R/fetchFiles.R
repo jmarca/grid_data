@@ -91,19 +91,21 @@ get.grid.aadt.from.couch <- function(i,j,year){
 ##' @param month the month
 ##' @return a dataframe built from repeated calls to get.grid.file.from.couch
 ##' @author James E. Marca
-get.raft.of.grids <- function(df.grid.subset,year,month){
+get.raft.of.grids <- function(df.grid.subset,year,month,day){
 
     curlH <- RCurl::getCurlHandle()
 
     ## df.grid.subset has a bunch of grids to get
     ## i_cell, j_cell
     ## make a start and end date
-    month.padded=paste(month)
-    if(month<10) month.padded=paste('0',month,sep='')
-    start.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
-    month.padded=paste(month+1)
-    if(month+1<10) month.padded=paste('0',month+1,sep='')
-    end.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
+    month.padded <- paste(month)
+    if(month<10) month.padded <- paste('0',month,sep='')
+    day.padded <- paste(day)
+    if(day<10) day.padded <- paste('0',day,sep='')
+    start.date <- paste( paste(year,month.padded,day.padded,sep='-'),'00:00')
+    day.padded <- paste(day+1)
+    if(day+1<10) day.padded <- paste('0',day+1,sep='')
+    end.date <- paste( paste(year,month.padded,day.padded,sep='-'),'00:00')
     df.bind <- data.frame()
 
     for(i in 1:length(df.grid.subset[,1])){
@@ -116,10 +118,6 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
         ## print(length(json.data$rows))
         df <- parseGridRecord(json.data)
         rm(json.data)
-        ## df$Latitude  <- df.grid.subset[i,'lat']
-        ## df$Longitude <- df.grid.subset[i,'lon']
-        ## df$i_cell <- df.grid.subset[i,'i_cell']
-        ## df$j_cell <- df.grid.subset[i,'j_cell']
         df$s.idx <- i
         ## patch aadt onto df
         if(dim(df.bind)[1]==0){
@@ -163,16 +161,21 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
         df.mrg <- merge(df.mrg,df.grid.subset,all.x=TRUE,all.y=FALSE,by=c('i_cell','j_cell'))
         names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
     }
+    rm (df.bind)
     df.mrg
 }
 
 
 ##' Get rowcount of grids
 ##'
-##' Something.  Probably dumb.  Calls get.grid.file.from.couch and
+##' Calls get.grid.file.from.couch and
 ##' then returns the number of rows for the grid subset passed.  Seems
 ##' like a big waste of IO at this point, but maybe it is a great
 ##' idea.  Been a while since I've written this.
+##'
+##' passable idea.  the point is to only process cells that actually
+##' have data.  No sense clustering on a cell if there is nothing in
+##' it
 ##'
 ##' @title get.rowcount.of.grids
 ##' @param df.grid.subset a subset of grids to get
@@ -180,17 +183,21 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
 ##' @param month the month
 ##' @return a list of row counts for each of the cells in the grid subset
 ##' @author James E. Marca
-get.rowcount.of.grids <- function(df.grid.subset,year,month){
+get.rowcount.of.grids <- function(df.grid.subset,year,month,day){
 
     ## df.grid.subset has a bunch of grids to get
     ## i_cell, j_cell
     ## make a start and end date
     month.padded <- paste(month)
     if(month<10) month.padded <- paste('0',month,sep='')
-    start.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
-    month.padded <- paste(month+1)
-    if(month+1<10) month.padded <- paste('0',month+1,sep='')
-    end.date <- paste( paste(year,month.padded,'01',sep='-'),'00:00')
+    day.padded <- paste(day)
+    if(day<10) day.padded <- paste('0',day,sep='')
+    start.date <- paste( paste(year,month.padded,day.padded,sep='-'),'00:00')
+
+    day.padded <- paste(day+1)
+    if(day+1<10) day.padded <- paste('0',day+1,sep='')
+    end.date <- paste( paste(year,month.padded,day.padded,sep='-'),'00:00')
+
     df.grid.subset$rows <- 0
     for(i in 1:length(df.grid.subset[,1])){
         json.data <- get.grid.file.from.couch(df.grid.subset[i,'i_cell'],

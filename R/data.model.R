@@ -1,3 +1,11 @@
+##' Model the data for coordinates
+##'
+##'
+##' @title data.model
+##' @param df.mrg merged data frame
+##' @param formula the formula to fit over time and space
+##' @return the fit object
+##' @author James E. Marca
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
@@ -14,7 +22,15 @@ data.model <- function(df.mrg,formula=n.aadt.frac~1){
 }
 
 
-## to call from plyr, one ply per model
+##' Set up the prediction for a model
+##'
+##' Call this function to call from plyr, one ply per model
+##' @title data.predict.generator
+##' @param df.pred.grid the prediction grid
+##' @param ts.un time stamps
+##' @return a function that will run the prediction given the model
+##'     from within plyr loop
+##' @author James E. Marca
 data.predict.generator <- function(df.pred.grid,ts.un){
     n.sites <- length(df.pred.grid[,1])
     df.pred.grid$s.idx <- 1:n.sites
@@ -40,13 +56,28 @@ data.predict.generator <- function(df.pred.grid,ts.un){
     return (function(model){
         ## gc()
         print(grid.coords)
-        predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
+        spTimer::predict.spT(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
     })
 }
 
 
+##' This is the big outer modeling loop
+##'
+##' This function is called from the predict.hpms routine.  It needs
+##' the prediction grid (where should predictions be made), and a list
+##' of models and it will run the predictions and save to couchdb.
+##' Nothing is returned from this function.
+##' @title group.loop
+##' @param prediction.grid which cells in grid to do predictions on
+##' @param var.models the models to run over each grid cell
+##' @param ts.ts some sort of time series data
+##' @param ts.un a different time series.  Old stuff, I just don't
+##'     remember right now.
+##' @param curlH the curl handle
+##' @return nothing at all
+##' @author James E. Marca
 group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
-
+    config <- rcouchutils::get.config()
     ## set up for saving to couchdb
     df.all.predictions = list()
     for(sim.site in 1:(length(prediction.grid[,1]))){
@@ -92,7 +123,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
 
         print(paste(sim.site,
                     storedf[[1]]['_id']))
-        res <- rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,storedf,h=curlH)
+        res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
         rm(tempdf)
         rm(storedf)
         doccount <- doccount + res
@@ -140,8 +171,8 @@ rearrange_data <- function(col.names){
 ##' Omit grid cells in HPMS data that overlap existing fwy grids
 ##'
 ##' @title no.overlap
-##' @param df.fwy.data
-##' @param df.hpms.grid.locations
+##' @param df.fwy.data the cells with freeway data
+##' @param df.hpms.grid.locations the cells with hpms data
 ##' @return less than or equal to df.hpms.grid.locations
 ##' @author James E. Marca
 no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
@@ -152,19 +183,22 @@ no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
 
 ##' Determine the grids that need to be processed
 ##'
-##' Any grid with midnight on the current day in the DB does not need
-##' doing for the day.  Any grid cell without midnight stored in the
-##' DB is assumed to need processing.
+##' This routine will run the hpms grids at the database and determine
+##' which ones need to be processed still.  No point duplicating
+##' effort.  Any grid with midnight on the current day in the DB does
+##' not need doing for the day.  Any grid cell without midnight stored
+##' in the DB is assumed to need processing.
 ##'
 ##' @title necessary.grids
-##' @param df.fwy.data
-##' @param df.hpms.grid.locations
-##' @param year
-##' @param curlH
+##' @param df.fwy.data the grid cells with freeway data
+##' @param df.hpms.grid.locations the grid cells with hpms data
+##' @param year the year of analysis
+##' @param curlH the curl handle
 ##' @return a possibly reduced list of df.hpms.grid.locations
 ##' @author James E. Marca
 necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
+    config <- rcouchutils::get.config()
     picker <- 1:length(df.hpms.grid.locations[,1])
     hpmstodo <- picker < 0 # default false
 
@@ -189,7 +223,7 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     print(paste('checking',couch.test.date))
 
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
-    result = rcouchutils::couch.allDocsPost(db=hpms.grid.couch.db,
+    result = rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
                                             keys=couch.test.docs,
                                             include.docs=FALSE,h=curlH)
     rows = result$rows
@@ -212,11 +246,15 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
 ##' Assign a fraction because just one freeway cell
 ##'
+##' At the moment this does nothing as it hasnt been tested and I want
+##' to run the other cells first.
+##'
+##'
 ##' @title assign.fraction
-##' @param df.fwy.data
-##' @param df.hpms.grid.locations
-##' @param year
-##' @param curlH
+##' @param df.fwy.data the freeway grid cells (but really just one)
+##' @param df.hpms.grid.locations the hpms grid cells
+##' @param year the year, for writing to couchdb
+##' @param curlH the curl handle for couchdb
 ##' @return nothing
 ##' @author James E. Marca
 assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
@@ -224,6 +262,11 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     return ()
     ## just assign frac to hpms cells
     picked <- 1:length(df.hpms.grid.locations[,1])
+    ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
+    ts.un <- sort(unique(ts2))
+    ts.ct <- sort(unique(df.fwy.data$tsct))
+    ts.ts = sort(unique(df.fwy.data$ts))
+    config <- rcouchutils::get.config()
     for(sim.set in picked){
         df.pred.grid <- df.hpms.grid.locations[sim.set,]
         df.all.predictions <- data.frame('ts'= ts.ts)
@@ -239,7 +282,7 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
             rnm = names(df.all.predictions)
             names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
             save.these = ! is.na(df.all.predictions$n)
-            rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,df.all.predictions[save.these,],h=curlH)
+            rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,df.all.predictions[save.these,],h=curlH)
         }
     }
     return ()
@@ -248,11 +291,11 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##' Predict fractions at HPMS grid cells based on models
 ##'
 ##' @title predict.hpms.data
-##' @param df.fwy.data
-##' @param df.hpms.grid.locations
-##' @param var.models
-##' @param year
-##' @param curlH
+##' @param df.fwy.data the freeway grid cells
+##' @param df.hpms.grid.locations the hpms grid cells
+##' @param var.models the models to use for predictions
+##' @param year the year, for writing to the correct db entry
+##' @param curlH the curl handle for couchdb
 ##' @return nothing at all
 ##' @author James E. Marca
 predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year,curlH){
@@ -270,7 +313,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
-    runs.index <- rep_len(1:num.runs,length=length(picked))
+    runs.index <- rep_len(1:num.runs,length.out = length(picked))
 
     ## random permutation of the grid cells I need to predict
     df.pred.grid <- df.hpms.grid.locations[picked,]
@@ -289,7 +332,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 ##' Model fraction changes in space based on hourly freeway observations
 ##'
 ##' @title model.fwy.data
-##' @param df.fwy.data
+##' @param df.fwy.data the freeway grid cells
 ##' @return the models list
 ##' @author James E. Marca
 model.fwy.data <- function(df.fwy.data){
@@ -309,9 +352,9 @@ model.fwy.data <- function(df.fwy.data){
 ##' Step through the jobs for modeling and predicting
 ##'
 ##' @title processing.sequence
-##' @param df.fwy.data
-##' @param df.hpms.grid.locations
-##' @param year
+##' @param df.fwy.data the freeway grid cells
+##' @param df.hpms.grid.locations the hpms grid cells
+##' @param year the year of this analysis
 ##' @return nothing at all
 ##' @author James E. Marca
 processing.sequence <- function(df.fwy.data,
@@ -349,12 +392,17 @@ processing.sequence <- function(df.fwy.data,
 
 ##' Process a month of data day by day
 ##'
+##' First step is to get the hour by hour data for the freeway grid
+##' cells.  The second step is to model and predict, using plyr, one
+##' day at a time, by running the processing.sequence function
+##'
 ##' This can get out of hand.  RAM bug starts here
+##'
 ##' @title process.data.by.day
-##' @param df.grid
-##' @param df.hpms.grids
-##' @param year
-##' @param month
+##' @param df.grid the freeway grid cells, but not the data
+##' @param df.hpms.grids the hpms grid cells
+##' @param year the year of analysis
+##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
 process.data.by.day <- function(df.grid,df.hpms.grids,year,month){

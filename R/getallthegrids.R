@@ -1,139 +1,115 @@
-library(doMC)
-registerDoMC(1)
-
-## need node_modules directories
-dot_is <- getwd()
-node_paths <- dir(paste(dot_is,'/..',sep=''),pattern='\\.Rlibs',
-                  full.names=TRUE,recursive=TRUE,
-                  ignore.case=TRUE,include.dirs=TRUE,
-                  all.files = TRUE)
-path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
-lib_paths <- .libPaths()
-.libPaths(c(path, lib_paths))
-
-print(.libPaths())
-
-## need env for test file
-config_file <- Sys.getenv('R_CONFIG')
-
-if(config_file ==  ''){
-    config_file <- '../config.json'
-}
-print(paste ('using config file =',config_file))
-config <- rcouchutils::get.config(config_file)
-
-
-
-source('./fetchFiles.R')
-
-## get all the grids in a county
-## library(cluster)
-library('RPostgreSQL')
-m <- dbDriver("PostgreSQL")
-spatialvds.con <-  dbConnect(m
-                  ,user=config$postgresql$auth$username
-                  ,host=config$postgresql$host
-                  ,dbname=config$postgresql$db)
-
-## spatialvds.con <-  dbConnect(m
-##                   ,user=psqlenv[2]
-##                   ,password=psqlenv[3]
-##                   ,host=psqlenv[1]
-##                   ,port=psql.port
-##                   ,dbname="spatialvds")
-
-get.all.the.grids <- function(basin){
-  ## assume area is a county for now
-
-  ## form a sql command
-
-  grid.query <- paste( "select i_cell,j_cell,st_aswkt(st_centroid(grids.geom4326)) from carbgrid.state4k grids join public.carb_airbasins_aligned_03 basins where ab=",basin," and grids.geom4326 && basins.geom_4326" )
-  ##print(wim.query)
-  rs <- dbSendQuery(con,wim.query)
-  df.wim <- fetch(rs,n=-1)
-  df.wim
-
+##' A little script to save typing out the same bit of sql
+##'
+##' @title select.grids.in.basin
+##' @param basin the basin
+##' @return a string for use as a with or select statement
+##' @author James E. Marca
+select.grids.in.basin <- function(basin){
+   paste("select i_cell,j_cell,"
+        ,"st_centroid(grids.geom4326) as centroid"
+        ,", grids.geom4326 as geom4326"
+        ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
+        ," where ab='",basin
+        ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
+        ,sep='')
 }
 
+##' Get all the grids in an airbasin shape with hpms data
+##'
+##' This function will hit postgresql and fetch all of the grid cells
+##' that lie inside of the passed-in airbasin shape.  If you stare at
+##' the query, you should see that the rule "inside" is that the
+##' centroid of the grid lies inside of the shape.
+##'
+##' @title get.grids.with.hpms
+##' @param basin the name of the basin (two letter abbreviation)
+##' @return the result of the query: rows of i_cell,j_cell, centroid
+##'     lon, centroid lat
+##' @author James E. Marca
 get.grids.with.hpms <- function(basin){
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-## select grid cells with hpm records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," from basingrids"
-                    ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                    ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  ##print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+    ## select grid cells with hpm records in them
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," from basingrids"
+                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," group by i_cell,j_cell,lon,lat"
+                       ,sep='')
+    ## print(grid.query)
+    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- RPostgreSQL::fetch(rs,n=-1)
+    df.grid
 }
 
-get.grids.with.hpms.data <- function(basin){
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-## select grid cells with hpm records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," sum(h.aadt),sum(h.section_length),h.weighted_design_speed,h.speed_limit,h.kfactor,h.
-'perc_single_unit',
-'avg_single_unit',
-'perc_combination',
-'avg_combination', "
-                    ," from basingrids"
-                    ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                    ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  ##print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+##' Get all the grids in an airbasin shape with hpms data
+##'
+##' This function will hit postgresql and fetch all of the grid cells
+##' that lie inside of the passed-in airbasin shape.  If you stare at
+##' the query, you should see that the rule "inside" is that the
+##' centroid of the grid lies inside of the shape.
+##'
+##' @title get.grids.with.hpms
+##' @param basin the name of the basin (two letter abbreviation)
+##' @return the result of the query: rows of i_cell,j_cell, centroid
+##'     lon, centroid lat
+##' @author James E. Marca
+get.grids.with.hpms <- function(basin){
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
+    ## select grid cells with hpm records in them
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," from basingrids"
+                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
+                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," group by i_cell,j_cell,lon,lat"
+                       ,sep='')
+    ## print(grid.query)
+    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- RPostgreSQL::fetch(rs,n=-1)
+    df.grid
 }
 
+##' Get grid cells overlapping highway detector segments (vds or wim).
+##'
+##' Get the grid cells that are likely to have data from the VDS/WIM detectors.
+##'
+##' @title get.grids.with.detectors
+##' @param basin the air basin, two letter abbreviation
+##' @return the results of the sql query, rows of
+##'     {i_cell,j_cell,centroid lon,centroid lat}
+##' @author James E. Marca
 get.grids.with.detectors <- function(basin){
+    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
 
-  grid.with = paste("with basingrids as (select i_cell,j_cell,"
-,"st_centroid(grids.geom4326) as centroid"
-,", geom4326"
-," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-," where ab='",basin,"' and grids.geom4326 && basins.geom_4326)",sep='')
-
-## select grid cells with tdetectors records in them
-grid.query <- paste(grid.with
-                    ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                    ," from basingrids"
-                    ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
-                    ," group by i_cell,j_cell,lon,lat"
-                    ,sep='')
-  ##print(grid.query)
-  rs <- dbSendQuery(spatialvds.con,grid.query)
-  df.grid <- fetch(rs,n=-1)
-  df.grid
+    ## select grid cells with tdetectors records in them
+    grid.query <- paste(grid.with
+                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
+                       ," from basingrids"
+                       ," join tempseg.tdetector ttd on  st_intersects(ttd.geom,geom4326)"
+                       ," group by i_cell,j_cell,lon,lat"
+                       ,sep='')
+    ## print(grid.query)
+    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- RPostgreSQL::fetch(rs,n=-1)
+    df.grid
 }
 
-cluster.grids <- function(df.grid){
-
-  cl.df.grid
-}
-
-process.grids <- function(df.grid){
-
-}
-
-
-hpms.grid.couch.db <- 'carb%2Fgrid%2Fstate4k%2fhpms'
-
-
+##' Pick off HPMS grids inside the effective "range" of detector grids
+##'
+##' basically just expands the grids by one in each direction, such
+##' that you are pulling into the modeling run just the surrounding
+##' hpms grids.  if you want more grids, expand the expand parameter,
+##' say to 2 for two squares away.
+##'
+##' @title get.hpms.in.range
+##' @param df.hpms.grids the hpms grids
+##' @param df.grid the grids used for the next model run
+##' @param expand an integer number of squares to expand;  default 1
+##' @return a binary true false filter index, which is true if an hpms
+##'     grid cell falls inside of 'expand' cells away from a df.grid
+##'     cell, false otherwise.
+##' @author James E. Marca
 get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
 
     ## assume without proof that a cell can influence at least a few grid cells on either side.
@@ -151,10 +127,29 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
+
+##' Compute the manhattan distance between two lat, lon points
+##'
+##' @title compute.manhattan.distance
+##' @param a a value with lat, lon
+##' @param b a value with lat, lon
+##' @return manhattan distance---that is, how many blocks over plus how many up
+##' @author James E. Marca
 compute.manhattan.distance <- function(a,b){
     abs(a$lat - b$lat) + abs(a$lon - b$lon)
 }
 
+##' Assign an HPMS grid cell to a cluster
+##'
+##' Assign an HPMS grid cell to a cluster.  Uses manhattan distance,
+##' and clusters based on a next nearest neighbor rule.  Clustering is
+##' needed because doing eerything at once chokes the ram and takes an
+##' age to run.
+##'
+##' @title assign.hpms.grid.cell
+##' @param centers the centers of clusters, for computing the intial distances
+##' @return a function that will do the assigning.
+##' @author James E. Marca
 assign.hpms.grid.cell <- function(centers){
     assign.cell <- function(lon,lat=NULL){
         if(is.data.frame(lon)){
@@ -174,13 +169,11 @@ assign.hpms.grid.cell <- function(centers){
     }
 }
 
-source('./data.model.R')
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title
-##' @return
+##' The main function that does everything.
+##' @title runme
+##' @return null
 ##' @author James E. Marca
+##' @export
 runme <- function(){
 
   year = Sys.getenv(c("CARB_GRID_YEAR"))
@@ -235,4 +228,3 @@ runme <- function(){
      }
   }
 }
-runme()

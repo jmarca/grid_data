@@ -34,37 +34,6 @@ parseGridRecord <- function(rawjson){
 
 aadt.cols <- c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')
 
-deprecated.dumpPredictionsToJSON <- function(chunk,bulk=TRUE){
-  ## must split out text and numeric, so numbers don't get promoted to text
-  if( ! '_id' %in% names(chunk) ){
-    chunk[,'_id']=paste(chunk$geom_id,chunk$ts,sep='_')
-  }
-  print(paste(chunk[,'_id']))
-  colnames <- names(chunk)
-  text.cols    <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE)
-  numeric.cols <-  grep( pattern="^(_id|ts|geom_id|freeway|detectors)$",x=colnames,perl=TRUE,invert=TRUE)
-  aadt.cols = grep(pattern="^(n|hh|nhh)",x=colnames[numeric.cols],perl=TRUE)
-  numeric.data.json <- function(row){
-    cellvals = RJSONIO::toJSON(row[c(1,2)],collapse='')
-    aadtvals = RJSONIO::toJSON(row[aadt.cols],collapse='')
-    cellvals = gsub("\\s+"," ",x=cellvals,perl=TRUE)
-    cellvals = gsub("{|}","",x=cellvals,perl=TRUE)
-    aadtvals = gsub("\\s+"," ",x=aadtvals,perl=TRUE)
-    paste('{',cellvals,',"aadt_frac":',aadtvals,'}',sep='')
-  }
-  num.data <- apply(chunk[,numeric.cols],1,numeric.data.json)
-  text.data <- list()
-  if(length(text.cols) < 2){
-    text.data <- RJSONIO::toJSON(chunk[,text.cols],collapse='')
-  }else{
-    text.data <- apply(chunk[,text.cols],1,toJSON,collapse='')
-  }
-  bulkdocs <- gsub('} {',',',x=paste(num.data,text.data,collapse=','),perl=TRUE)
-  if(bulk){  bulkdocs <- paste('{"docs":[',bulkdocs,']}') }
-  bulkdocs
-}
-
-
 
 parseAADTRecord <- function(rawjson){
   ## just a doc, make it a df

@@ -99,6 +99,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         }
         rm(grid.pred)
     }
+
     rm(predf)
     ## for(model.name in names(var.models)){
     ##     grid.pred <- predictions[[model.name]]
@@ -110,24 +111,27 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
     rearranger <- NULL
     doccount <- 0
     for(sim.site in 1:(length(df.all.predictions))){
-        tempdf <- df.all.predictions[[sim.site]]
-        rnm = names(tempdf)
-        names(tempdf) <- gsub('.aadt.frac','',x=rnm)
-        if(is.null(rearranger)){
-            rearranger <- rearrange_data(names(tempdf))
-        }
+        rnm <- names( df.all.predictions[[sim.site]] )
 
-        storedf <- plyr::dlply(tempdf,plyr::.(ts),rearranger)
-        ## strip the attributes added by plyr
-        attributes(storedf) <- NULL
+        rnm  <- gsub('.aadt.frac','',x=rnm)
+        if(is.null(rearranger)){
+            rearranger <- rearrange_data(rnm)
+        }
+        names( df.all.predictions[[sim.site]] ) <- rnm
+        storedf <- list()
+        for(i in 1:length(df.all.predictions[[sim.site]][['ts']])){
+            storedf[[i]] <- rearranger(df.all.predictions[[sim.site]][i,])
+        }
 
         print(paste(sim.site,
                     storedf[[1]]['_id']))
+
         res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
-        rm(tempdf)
+
         rm(storedf)
         doccount <- doccount + res
     }
+
     gc()
     ## print(paste('saved',doccount,'docs'))
     return ()
@@ -307,7 +311,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 

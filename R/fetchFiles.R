@@ -162,7 +162,9 @@ get.raft.of.grids <- function(df.grid.subset,year,month,day){
         names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
     }
     rm (df.bind)
-    df.mrg
+
+    keep <- df.mrg$day == day
+    return(df.mrg[keep,])
 }
 
 

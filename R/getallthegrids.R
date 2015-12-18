@@ -195,7 +195,7 @@ runme <- function(){
             }
 
 
-            print(paste('processing',basin,year))
+            print(paste('processing',basin,year,month,day))
 
             for(cl.i in 1:numclust){
                 print(paste('cluster',cl.i,'of',numclust))

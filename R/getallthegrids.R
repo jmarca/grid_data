@@ -1,5 +1,5 @@
 library(doMC)
-registerDoMC(6)
+registerDoMC(1)
 
 ## need node_modules directories
 dot_is <- getwd()

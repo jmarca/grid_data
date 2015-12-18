@@ -11,6 +11,7 @@ select.grids.in.basin <- function(basin){
         ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
         ," where ab='",basin
         ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
+##        ,"' and basins.geom_4326 && grids.geom4326"
         ,sep='')
 }
 

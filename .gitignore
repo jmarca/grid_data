@@ -12,3 +12,4 @@ config.json
 .cookies.txt
 .tern-port
 man
+log

@@ -33,6 +33,7 @@ get.grid.file <- function(i,j,server,service='grid'){
 ##' @param start the start time
 ##' @param end the end time
 ##' @param include.docs boolean, defaults to TRUE.
+##' @param curlH curl handle for couchdb
 ##' @return The result of calling rcouchutils::couch.allDocs()
 ##' @author James E. Marca
 get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE,curlH=NULL){
@@ -56,6 +57,7 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE,curlH=NULL)
         json <- rcouchutils::couch.allDocs(config$couchdb$grid_detectors, query=query, include.docs=include.docs,h=curlH)
     }
     return(json)
+
 }
 
 ##' Get the AADT value for a grid cell from CouchDB

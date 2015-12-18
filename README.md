@@ -167,3 +167,13 @@ These are:
 * LC
 
 ### see also the README.md in Rwork directory
+
+
+# Conduct
+
+Please note that this project is released with a
+[Contributor Code of Conduct](CONDUCT.md). By participating in this
+project you agree to abide by its terms.
+
+(And thanks to devtools project for making it easy to include the
+above statement.)

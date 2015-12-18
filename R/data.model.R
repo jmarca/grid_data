@@ -60,7 +60,6 @@ data.predict.generator <- function(df.pred.grid,ts.un){
     })
 }
 
-
 ##' This is the big outer modeling loop
 ##'
 ##' This function is called from the predict.hpms routine.  It needs
@@ -78,6 +77,7 @@ data.predict.generator <- function(df.pred.grid,ts.un){
 ##' @author James E. Marca
 group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
     config <- rcouchutils::get.config()
+
     ## set up for saving to couchdb
     df.all.predictions = list()
     for(sim.site in 1:(length(prediction.grid[,1]))){
@@ -202,7 +202,6 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     picker <- 1:length(df.hpms.grid.locations[,1])
     hpmstodo <- picker < 0 # default false
 
-
     ## handle time from df.fwy.data
 
     ## set up date to check if data in couchdb for hpms grid
@@ -222,6 +221,7 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
     print(paste('checking',couch.test.date))
 
+    picker <- 1:length(df.hpms.grid.locations[,1])
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
     result = rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
                                             keys=couch.test.docs,
@@ -248,7 +248,6 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##'
 ##' At the moment this does nothing as it hasnt been tested and I want
 ##' to run the other cells first.
-##'
 ##'
 ##' @title assign.fraction
 ##' @param df.fwy.data the freeway grid cells (but really just one)
@@ -299,7 +298,6 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##' @return nothing at all
 ##' @author James E. Marca
 predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year,curlH){
-
     ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
     ts.un <- sort(unique(ts2))
     ts.ct <- sort(unique(df.fwy.data$tsct))
@@ -309,7 +307,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 5 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -318,13 +316,16 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     ## random permutation of the grid cells I need to predict
     df.pred.grid <- df.hpms.grid.locations[picked,]
 
-        for (i in 1:max(runs.index)){
-            ## print(paste('run',i,'memory',pryr::mem_used()))
-            idx <- runs.index == i
-            ## this used to use plyr, but made it a loop for now to help debugging
-            group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
+    ## remove try block here.  Didn't help the memory leak, but I
+    ## don't see what it was doing anyway...fails happen in RCurl to
+    ## couchdb, which is already wrapped in a try
+    for (i in 1:max(runs.index)){
+        ## print(paste('run',i,'memory',pryr::mem_used()))
+        idx <- runs.index == i
+        ## this used to use plyr, but made it a loop for now to help debugging
+        group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
 
-        }
+    }
 
     return ()
 }

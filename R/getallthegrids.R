@@ -42,34 +42,6 @@ get.grids.with.hpms <- function(basin){
     df.grid
 }
 
-##' Get all the grids in an airbasin shape with hpms data
-##'
-##' This function will hit postgresql and fetch all of the grid cells
-##' that lie inside of the passed-in airbasin shape.  If you stare at
-##' the query, you should see that the rule "inside" is that the
-##' centroid of the grid lies inside of the shape.
-##'
-##' @title get.grids.with.hpms
-##' @param basin the name of the basin (two letter abbreviation)
-##' @return the result of the query: rows of i_cell,j_cell, centroid
-##'     lon, centroid lat
-##' @author James E. Marca
-get.grids.with.hpms <- function(basin){
-    grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
-    ## select grid cells with hpm records in them
-    grid.query <- paste(grid.with
-                       ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
-                       ," from basingrids"
-                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
-                       ," group by i_cell,j_cell,lon,lat"
-                       ,sep='')
-    ## print(grid.query)
-    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
-    df.grid <- RPostgreSQL::fetch(rs,n=-1)
-    df.grid
-}
-
 ##' Get grid cells overlapping highway detector segments (vds or wim).
 ##'
 ##' Get the grid cells that are likely to have data from the VDS/WIM detectors.
@@ -127,7 +99,6 @@ get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
         df.hpms.grids$j_cell <= jcell.max
 }
 
-
 ##' Compute the manhattan distance between two lat, lon points
 ##'
 ##' @title compute.manhattan.distance
@@ -170,6 +141,7 @@ assign.hpms.grid.cell <- function(centers){
 }
 
 ##' The main function that does everything.
+##'
 ##' @title runme
 ##' @return null
 ##' @author James E. Marca

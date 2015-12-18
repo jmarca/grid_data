@@ -1,41 +1,3 @@
-library(doMC)
-registerDoMC(2)
-
-## need node_modules directories
-dot_is <- getwd()
-node_paths <- dir(paste(dot_is,'/..',sep=''),pattern='\\.Rlibs',
-                  full.names=TRUE,recursive=TRUE,
-                  ignore.case=TRUE,include.dirs=TRUE,
-                  all.files = TRUE)
-path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
-lib_paths <- .libPaths()
-.libPaths(c(path, lib_paths))
-
-print(.libPaths())
-
-## pkg <- devtools::as.package('.')
-## ns_env <- devtools::load_all(pkg,quiet = TRUE)$env
-
-## need env for test file
-config_file <- Sys.getenv('R_CONFIG')
-
-if(config_file ==  ''){
-    config_file <- '../config.json'
-}
-print(paste ('using config file =',config_file))
-config <- rcouchutils::get.config(config_file)
-
-
-source('./fetchFiles.R')
-
-## get all the grids in a county
-## library(cluster)
-library('RPostgreSQL')
-m <- dbDriver("PostgreSQL")
-spatialvds.con <-  dbConnect(m
-                  ,user=config$postgresql$auth$username
-                  ,host=config$postgresql$host
-                  ,dbname=config$postgresql$db)
 
 ##' A little script to save typing out the same bit of sql
 ##'
@@ -76,8 +38,8 @@ get.grids.with.hpms <- function(basin){
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
     ## print(grid.query)
-    rs <- dbSendQuery(spatialvds.con,grid.query)
-    df.grid <- fetch(rs,n=-1)
+    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- RPostgreSQL::fetch(rs,n=-1)
     df.grid
 }
 
@@ -103,8 +65,8 @@ get.grids.with.detectors <- function(basin){
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
     ## print(grid.query)
-    rs <- dbSendQuery(spatialvds.con,grid.query)
-    df.grid <- fetch(rs,n=-1)
+    rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
+    df.grid <- RPostgreSQL::fetch(rs,n=-1)
     df.grid
 }
 
@@ -179,8 +141,6 @@ assign.hpms.grid.cell <- function(centers){
     }
 }
 
-source('./data.model.R')
-
 ##' The main function that does everything.
 ##'
 ##' @title runme
@@ -241,4 +201,3 @@ runme <- function(){
      }
   }
 }
-## runme()

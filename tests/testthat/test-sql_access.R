@@ -1,5 +1,17 @@
 context("sql_access")
 
+config <- rcouchutils::get.config(Sys.getenv('TEST_CONFIG'))
+
+library('RPostgreSQL')
+m <- dbDriver("PostgreSQL")
+## requires environment variables be set externally
+
+spatialvds.con <-  dbConnect(m
+                            ,user=config$postgresql$auth$username
+                            ,port=config$postgresql$port
+                            ,host=config$postgresql$host
+                            ,dbname=config$postgresql$db)
+
 ## TODO: Rename context
 ## TODO: Add more tests
 

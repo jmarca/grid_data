@@ -1,8 +1,3 @@
-library(spTimer)
-## source('../components/jmarca-rstats_couch_utils/couchUtils.R')
-## source('../components/jmarca-rstats_remote_files/remoteFiles.R')
-source('./loadJSON.R')
-
 
 ##' Get the grid file from a remote server.
 ##'
@@ -42,6 +37,7 @@ get.grid.file <- function(i,j,server,service='grid'){
 ##' @return The result of calling rcouchutils::couch.allDocs()
 ##' @author James E. Marca
 get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
+    config <- rcouchutils::get.config()
 
     start.date.part <- start
     end.date.part <-  end
@@ -54,6 +50,7 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
     'startkey'=paste(paste(i,j,start.date.part,sep='_'),sep=''),
     'endkey'=paste(paste(i,j,end.date.part,sep='_'),sep='')
   )
+
   json <- rcouchutils::couch.allDocs(config$couchdb$grid_detectors , query=query, include.docs=include.docs)
   return(json)
 
@@ -71,6 +68,7 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
 ##' @return the result of rcouchutils::couch.get
 ##' @author James E. Marca
 get.grid.aadt.from.couch <- function(i,j,year){
+    config <- rcouchutils::get.config()
     ## when bug is fixed, make this i,j,year,aadt
     doc=paste(i,j,'aadt',sep='_')
     print('bug in aadt still')
@@ -84,7 +82,7 @@ get.grid.aadt.from.couch <- function(i,j,year){
 ##' Get a raft of grids
 ##'
 ##' Get a raft of grids. Lots of them.  pass a subset
-##' @title
+##' @title get.raft.of.grids
 ##' @param df.grid.subset a list of cells to grab
 ##' @param year the year
 ##' @param month the month
@@ -131,7 +129,7 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
     ts.un <- sort(unique(df.bind$ts2))
     ##print(summary(ts.un))
     ##print('do posix')
-    ts.psx <<- as.POSIXct(ts.un)
+    ts.psx <- as.POSIXct(ts.un)
     ##print('done posix')
 
     site.lat.lon <- unique(df.bind[,c('s.idx','i_cell','j_cell')])

@@ -1,3 +1,8 @@
+library(doMC)
+registerDoMC(2)
+
+library(spTimer)
+
 ## need node_modules directories
 dot_is <- getwd() # expect that this is one level up
 
@@ -23,16 +28,9 @@ if(config_file ==  ''){
 print(paste ('using config file =',config_file))
 config <- rcouchutils::get.config(config_file)
 
-## pass it the raw data details, and either the raw data will get
-## loaded and parsed and saved as a dataframe, or else the existing
-## dataframe will get loaded.  In either case, the plots will get made
-## and saved to couchdb
 
 
 
-
-## get all the grids in a county
-## library(cluster)
 library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 spatialvds.con <-  dbConnect(m
@@ -40,5 +38,7 @@ spatialvds.con <-  dbConnect(m
                   ,host=config$postgresql$host
                   ,port=config$postgresql$port
                    ,dbname=config$postgresql$db)
+
+## do it
 
 runme()

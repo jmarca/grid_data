@@ -7,25 +7,24 @@
     "test": "test"
   },
   "dependencies": {
-    "lodash": "",
-    "pg": "",
-    "superagent": "",
-    "request": "",
-    "topojson": "",
-    "optimist": "",
     "async": "",
-    "couch_check_state": "jmarca/couch_check_state",
-    "config_okay": "",
     "calvad_areas": "jmarca/calvad_areas",
     "calvad_compute_aadt": "jmarca/calvad_compute_aadt",
-    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
     "calvad_rscripts": "jmarca/calvad_rscripts",
-    "rstats_couch_utils": "jmarca/rstats_couch_utils",
+    "config_okay": "",
     "configr": "jmarca/configr",
-    "queue-async": "",
-    "rcouchutils": "jmarca/rstats_couch_utils"
-    "calvad_rscripts": "jmarca/calvad_rscripts",
+    "couch_check_state": "jmarca/couch_check_state",
+    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
+    "lodash": "",
+    "optimist": "",
+    "pg": "",
+    "queue-async": "^1.0.7",
+    "rcouchutils": "jmarca/rstats_couch_utils",
+    "request": "",
+    "rstats_couch_utils": "jmarca/rstats_couch_utils",
     "rstats_remote_files": "jmarca/rstats_remote_files",
+    "superagent": "",
+    "topojson": ""
   },
   "devDependencies": {
     "should": ""
@@ -38,6 +37,6 @@
     "url": "https://github.com/jmarca/grid_data"
   },
   "author": "James E. Marca",
-  "license": "GPL-2",
+  "license": "GPL-2.0",
   "readmeFilename": "README.md"
 }

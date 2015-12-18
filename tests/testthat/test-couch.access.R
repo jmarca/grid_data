@@ -1,3 +1,5 @@
+config <- rcouchutils::get.config(Sys.getenv('TEST_CONFIG'))
+
 context("couch_access")
 
 ## TODO: Rename context

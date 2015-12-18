@@ -11,3 +11,9 @@ node_modules.*
 node_modules$
 ^Rtest\.R$
 ^Rinstall\.R$
+lib
+\.RData$
+.*\.html
+.*\.mdt?$
+.*\.pdf$
+.*\.png$

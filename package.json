@@ -7,20 +7,22 @@
     "test": "test"
   },
   "dependencies": {
-    "lodash": "",
-    "pg": "",
-    "superagent": "",
-    "request": "",
-    "topojson": "",
-    "optimist": "",
-    "async": "",
     "calvad_areas": "jmarca/calvad_areas",
     "calvad_compute_aadt": "jmarca/calvad_compute_aadt",
-    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
-    "rstats_couch_utils": "jmarca/rstats_couch_utils",
+    "calvad_rscripts": "jmarca/calvad_rscripts",
+    "config_okay": "",
     "configr": "jmarca/configr",
+    "couch_check_state": "jmarca/couch_check_state",
+    "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
+    "lodash": "",
+    "optimist": "",
+    "pg": "",
+    "queue-async": "^1.0.7",
+    "request": "",
+    "rstats_couch_utils": "jmarca/rstats_couch_utils",
     "rstats_remote_files": "jmarca/rstats_remote_files",
-    "config_okay":""
+    "superagent": "",
+    "topojson": ""
   },
   "devDependencies": {
     "should": ""
@@ -33,6 +35,6 @@
     "url": "https://github.com/jmarca/grid_data"
   },
   "author": "James E. Marca",
-  "license": "BSD",
+  "license": "GPL-2.0",
   "readmeFilename": "README.md"
 }

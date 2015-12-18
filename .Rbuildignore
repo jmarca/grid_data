@@ -8,3 +8,12 @@ node_modules.*
 node_modules$
 ^Rtest\.R$
 ^Rinstall\.R$
+^CONDUCT\.md$
+^devel_scratch
+^config\.json$
+lib
+\.RData$
+.*\.html
+.*\.mdt?$
+.*\.pdf$
+.*\.png$

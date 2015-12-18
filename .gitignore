@@ -4,12 +4,11 @@ Rwork/.Rhistory
 Rwork/Rtmp**
 Rwork/*.pdf
 **/components/
-/test.config.json
-/config.json
+test.config.json
+config.json
 *~
 .Rhistory
 .Rproj.user
-.RData
-/.cookies.txt
+.cookies.txt
 .tern-port
 man

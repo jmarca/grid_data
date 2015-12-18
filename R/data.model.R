@@ -156,6 +156,13 @@ no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
 ##' @author James E. Marca
 necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
 
+    picker <- 1:length(df.hpms.grid.locations[,1])
+    hpmstodo <- picker < 0 # default false
+
+
+    ## for doing SJV, redo all
+    return (df.hpms.grid.locations)
+
 
     ## handle time from df.fwy.data
 
@@ -176,14 +183,12 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
 
     print(paste('checking',couch.test.date))
 
-    picker <- 1:length(df.hpms.grid.locations[,1])
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
     result = rcouchutils::couch.allDocsPost(db=hpms.grid.couch.db,
                                             keys=couch.test.docs,
                                             include.docs=FALSE,h=curlH)
     rows = result$rows
     ## print(length(rows))
-    hpmstodo <- picker < 0 # default false
     for(i in length(couch.test.docs)){
         row = rows[[i]]
         if('error' %in% names(row)){

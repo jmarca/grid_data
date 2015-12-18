@@ -1,5 +1,3 @@
-curlH <- RCurl::getCurlHandle()
-
 data.model <- function(df.mrg,formula=n.aadt.frac~1){
 
   site.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
@@ -47,7 +45,7 @@ data.predict.generator <- function(df.pred.grid,ts.un){
 }
 
 
-group.loop <- function(prediction.grid,var.models,ts.ts,ts.un){
+group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
 
     ## set up for saving to couchdb
     df.all.predictions = list()
@@ -92,6 +90,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un){
         doccount <- doccount + res
     }
     ## print(paste('saved',doccount,'docs'))
+    return ()
 
 }
 
@@ -152,16 +151,13 @@ no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
 ##' @param df.fwy.data
 ##' @param df.hpms.grid.locations
 ##' @param year
+##' @param curlH
 ##' @return a possibly reduced list of df.hpms.grid.locations
 ##' @author James E. Marca
-necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
+necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
     picker <- 1:length(df.hpms.grid.locations[,1])
     hpmstodo <- picker < 0 # default false
-
-
-    ## for doing SJV, redo all
-    return (df.hpms.grid.locations)
 
 
     ## handle time from df.fwy.data
@@ -188,16 +184,18 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
                                             keys=couch.test.docs,
                                             include.docs=FALSE,h=curlH)
     rows = result$rows
-    ## print(length(rows))
+    print(length(rows))
     for(i in length(couch.test.docs)){
         row = rows[[i]]
+        ##print(row)
         if('error' %in% names(row)){
             ## error means doc not found, need to do this grid
             hpmstodo[i] <- TRUE
+            print(paste('todo',row$key,row$id,couch.test.docs[i]))
             ##true means need to do this document
          }
     }
-    print(couch.test.date)
+    print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     return (df.hpms.grid.locations[hpmstodo,])
 
 }
@@ -209,11 +207,14 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year){
 ##' @param df.fwy.data
 ##' @param df.hpms.grid.locations
 ##' @param year
+##' @param curlH
 ##' @return nothing
 ##' @author James E. Marca
-assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year){
+assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     print('buggy version')
+    return ()
     ## just assign frac to hpms cells
+    picked <- 1:length(df.hpms.grid.locations[,1])
     for(sim.set in picked){
         df.pred.grid <- df.hpms.grid.locations[sim.set,]
         df.all.predictions <- data.frame('ts'= ts.ts)
@@ -242,9 +243,10 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year){
 ##' @param df.hpms.grid.locations
 ##' @param var.models
 ##' @param year
+##' @param curlH
 ##' @return nothing at all
 ##' @author James E. Marca
-predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year){
+predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year,curlH){
 
     ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
     ts.un <- sort(unique(ts2))
@@ -255,7 +257,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = 5 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -269,7 +271,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
         for (i in 1:max(runs.index)){
             ## print(paste('run',i,'memory',pryr::mem_used()))
             idx <- runs.index == i
-            group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un)
+            group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
 
         }
     )
@@ -315,8 +317,10 @@ processing.sequence <- function(df.fwy.data,
                                 year){
 
 
+    curlH <- RCurl::getCurlHandle()
+
     hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
-    hpms <- necessary.grids(df.fwy.data,hpms,year)
+    hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
     if(length(hpms[,1])<1){
         print(paste('all done'))
         return ()
@@ -326,16 +330,18 @@ processing.sequence <- function(df.fwy.data,
         ## spatial model.
         ##
         ## just assign fraction
-        assign.fraction(df.fwy.data,hpms,year)
+        assign.fraction(df.fwy.data,hpms,year,curlH)
 
     }else{
         ## model, then predict
         var.models <- model.fwy.data(df.fwy.data)
         ## predict
-        predict.hpms.data(df.fwy.data,hpms,var.models,year)
+        predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
 
     }
-    ## print(paste('end processing.sequence memory',pryr::mem_used()))
+
+    print(paste('end processing.sequence memory',pryr::mem_used()))
+
     return()
 }
 
@@ -358,6 +364,8 @@ process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
 
     df.kp <- df.data[!drop,]
 
+    rm (df.data)
+    print(dim(df.kp))
     print(paste('month',month,'memory',pryr::mem_used()))
     plyr::d_ply(df.kp, plyr::.(day), processing.sequence,
                 .parallel = TRUE,

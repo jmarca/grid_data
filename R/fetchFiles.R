@@ -14,7 +14,7 @@ get.grid.file <- function(i,j,server='http://calvad.ctmlabs.net'){
 # one connection per thread
 # couchdb.handle = getCurlHandle()
 
-get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
+get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE,curlH=NULL){
 
   start.date.part <- start
   end.date.part <-  end
@@ -27,7 +27,12 @@ get.grid.file.from.couch <- function(i,j,start,end,include.docs=TRUE){
     'startkey'=paste(paste(i,j,start.date.part,sep='_'),sep=''),
     'endkey'=paste(paste(i,j,end.date.part,sep='_'),sep='')
   )
-  json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, include.docs=include.docs)
+    json <- NULL
+    if(is.null(curlH)){
+        json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, include.docs=include.docs)
+    }else{
+        json <- rcouchutils::couch.allDocs(grid.couch.db , query=query, include.docs=include.docs,h=curlH)
+    }
   return(json)
 }
 
@@ -41,6 +46,8 @@ get.grid.aadt.from.couch <- function(i,j,year){
 }
 
 get.raft.of.grids <- function(df.grid.subset,year,month){
+
+    curlH <- RCurl::getCurlHandle()
 
   ## df.grid.subset has a bunch of grids to get
   ## i_cell, j_cell
@@ -57,7 +64,8 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
     json.data <- get.grid.file.from.couch(df.grid.subset[i,'i_cell'],
                                           df.grid.subset[i,'j_cell'],
                                           start.date,
-                                          end.date)
+                                          end.date,
+                                          curlH=curlH)
     if('error' %in% names(json.data) || length(json.data$rows)<2) next
     ## print(length(json.data$rows))
     df <- parseGridRecord(json.data)
@@ -74,7 +82,9 @@ get.raft.of.grids <- function(df.grid.subset,year,month){
       df.bind <- rbind(df.bind,df)
     }
   }
-  ## maybe there is no data..
+    rm(curlH)
+
+    ## maybe there is no data..
   df.mrg = data.frame()
   if(dim(df.bind)[1]>0){
     ## need time to be uniform for all sites

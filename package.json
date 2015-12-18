@@ -17,7 +17,6 @@
     "calvad_areas": "jmarca/calvad_areas",
     "calvad_compute_aadt": "jmarca/calvad_compute_aadt",
     "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
-    "calvad_rscripts": "jmarca/calvad_rscripts",
     "rstats_couch_utils": "jmarca/rstats_couch_utils",
     "configr": "jmarca/configr",
     "rstats_remote_files": "jmarca/rstats_remote_files",

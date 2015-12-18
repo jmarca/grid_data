@@ -11,3 +11,5 @@ Rwork/*.pdf
 .Rproj.user
 .RData
 /.cookies.txt
+.tern-port
+man

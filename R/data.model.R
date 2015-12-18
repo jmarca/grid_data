@@ -20,25 +20,25 @@ data.predict.generator <- function(df.pred.grid,ts.un){
     df.pred.grid$s.idx <- 1:n.sites
     ts.psx <- as.POSIXct(ts.un)
     n.times <- length(ts.un)
+    dat.mrg <- matrix(NA,n.sites*n.times,8)
+    dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
+    dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
+    dat.mrg[,3] <- rep(ts.un$mon,n.sites)
+    dat.mrg[,4] <- rep(ts.un$mday,n.sites)
+    dat.mrg[,5] <- rep(ts.un$hour,n.sites)
+    dat.mrg[,6] <- rep(ts.psx,n.sites)
+    dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
+    dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
+    dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
+    df.mrg <- as.data.frame(dat.mrg)
+    df.mrg$n.aadt.frac <- NA
+    df.mrg$hh.aadt.frac <- NA
+    df.mrg$nhh.aadt.frac <- NA
+    df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
+                                        # grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
+    grid.coords<-as.matrix(unique(cbind(df.mrg$Longitude,df.mrg$Latitude)))
     return (function(model){
-        gc()
-        dat.mrg <- matrix(NA,n.sites*n.times,8)
-        dat.mrg[,1] <- sort(rep(df.pred.grid$s.idx,each=n.times)) ## site number
-        dat.mrg[,2] <- rep(ts.un$year,n.sites)+1900
-        dat.mrg[,3] <- rep(ts.un$mon,n.sites)
-        dat.mrg[,4] <- rep(ts.un$mday,n.sites)
-        dat.mrg[,5] <- rep(ts.un$hour,n.sites)
-        dat.mrg[,6] <- rep(ts.psx,n.sites)
-        dat.mrg[,7] <- sort(rep(df.pred.grid$lon,each=n.times)) ## lon
-        dat.mrg[,8] <- sort(rep(df.pred.grid$lat,each=n.times))  ## lat
-        dimnames(dat.mrg)[[2]] <- c('s.idx','year','month','day','hour','tsct','Longitude','Latitude')
-        df.mrg <- as.data.frame(dat.mrg)
-        df.mrg$n.aadt.frac <- NA
-        df.mrg$hh.aadt.frac <- NA
-        df.mrg$nhh.aadt.frac <- NA
-        df.mrg <-  merge(df.mrg,df.pred.grid,all=TRUE,by=c("s.idx"))
-        # grid.coords<-unique(cbind(df.mrg$Longitude,df.mrg$Latitude))
-        grid.coords<-as.matrix(unique(cbind(df.mrg$Longitude,df.mrg$Latitude)))
+        ## gc()
         print(grid.coords)
         predict(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
     })
@@ -59,20 +59,26 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
                                                         sep='_')
     }
 
-    predictions <- plyr::llply(var.models,data.predict.generator(prediction.grid,ts.un)
-                              ##,.parallel=TRUE
-                               )
-
-    for(model.name in names(var.models)){
-        grid.pred <- predictions[[model.name]]
+    predf <- data.predict.generator(prediction.grid,ts.un)
+    model.names <- names(var.models)
+    for (m in 1:length(var.models)){
+        grid.pred <- predf(var.models[[m]])
         for(sim.site in 1:(length(df.all.predictions))){
-            df.all.predictions[[sim.site]][,model.name] <- grid.pred$Median[,sim.site]
+            df.all.predictions[[sim.site]][,model.names[m]] <- grid.pred$Median[,sim.site]
         }
+        rm(grid.pred)
     }
+    rm(predf)
+    ## for(model.name in names(var.models)){
+    ##     grid.pred <- predictions[[model.name]]
+    ##     for(sim.site in 1:(length(df.all.predictions))){
+    ##         df.all.predictions[[sim.site]][,model.name] <- grid.pred$Median[,sim.site]
+    ##     }
+    ## }
     # gc()
     rearranger <- NULL
     doccount <- 0
-    for(sim.site in 1:1:(length(df.all.predictions))){
+    for(sim.site in 1:(length(df.all.predictions))){
         tempdf <- df.all.predictions[[sim.site]]
         rnm = names(tempdf)
         names(tempdf) <- gsub('.aadt.frac','',x=rnm)
@@ -87,8 +93,11 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         print(paste(sim.site,
                     storedf[[1]]['_id']))
         res <- rcouchutils::couch.bulk.docs.save(hpms.grid.couch.db,storedf,h=curlH)
+        rm(tempdf)
+        rm(storedf)
         doccount <- doccount + res
     }
+    gc()
     ## print(paste('saved',doccount,'docs'))
     return ()
 
@@ -266,20 +275,13 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     ## random permutation of the grid cells I need to predict
     df.pred.grid <- df.hpms.grid.locations[picked,]
 
-    runs.result <- try (
-        ## this used to use plyr, but made it a loop for now to help debugging
         for (i in 1:max(runs.index)){
             ## print(paste('run',i,'memory',pryr::mem_used()))
             idx <- runs.index == i
+            ## this used to use plyr, but made it a loop for now to help debugging
             group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
 
         }
-    )
-    if(class(runs.result) == "try-error"){
-        print ("\n Error predicting, try more groups? \n")
-        print(runs.result)
-        stop()
-    }
 
     return ()
 }

@@ -185,13 +185,13 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
                                             include.docs=FALSE,h=curlH)
     rows = result$rows
     print(length(rows))
-    for(i in length(couch.test.docs)){
+    for(i in 1:length(rows)){
         row = rows[[i]]
-        ##print(row)
+        ## print(row$key)
         if('error' %in% names(row)){
             ## error means doc not found, need to do this grid
             hpmstodo[i] <- TRUE
-            print(paste('todo',row$key,row$id,couch.test.docs[i]))
+            ## print(paste('todo',row$key,couch.test.docs[i]))
             ##true means need to do this document
          }
     }

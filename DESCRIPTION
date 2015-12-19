@@ -1,16 +1,19 @@
 Package: grid.data
 Title: Process CalVAD 4km grid data
 Version: 1.0.1
-Authors@R: person("James", "Marca", email = "jmarca@translab.its.uci.edu", role = c("aut", "cre"))
+Authors@R: c(person("James", "Marca",   role = c("aut", "cre"),
+                    email = "jmarca@translab.its.uci.edu"))
 Description: This package will create the hourly fractional variations
     for each grid cell with data in California.  The grid is defined
     by the ARB 4km grid.  The hourly fraction should be multiplied by
     the average annual daily traffic for the grid cell to get the
     hourly expected traffic volumes.
-Depends: R (>= 3.2.0)
+Depends:
+    R (>= 3.2.0)
 License: GPL-2
 LazyData: true
-Imports: cluster,
+Imports:
+    cluster,
     doMC,
     spTimer,
     rcouchutils,
@@ -20,5 +23,6 @@ Imports: cluster,
     RJSONIO,
     RCurl,
     pryr
-Suggests: testthat
-RoxygenNote: 5.0.0
+Suggests:
+    testthat
+RoxygenNote: 5.0.1

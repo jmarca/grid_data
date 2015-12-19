@@ -311,7 +311,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -376,8 +376,8 @@ processing.sequence <- function(df.fwy.grid,
     hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
     if(length(hpms[,1])<1){
         print(paste('all done'))
-        rm(df.fwy.data)
-        rm(curlH)
+        ## rm(df.fwy.data)
+        ## rm(curlH)
         return ()
     }
     if(length(unique(df.fwy.data$s.idx))<2){
@@ -395,9 +395,9 @@ processing.sequence <- function(df.fwy.grid,
 
     }
 
-    rm(df.fwy.data)
-    rm(curlH)
-    print(paste('end processing.sequence memory',pryr::mem_used()))
+    ## rm(df.fwy.data)
+    ## rm(curlH)
+    ## print(paste('end processing.sequence memory',pryr::mem_used()))
 
     return()
 }

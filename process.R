@@ -1,7 +1,7 @@
-library(doMC)
-registerDoMC(2)
+## library(doMC)
+## registerDoMC(2)
 
-library(spTimer)
+## library(spTimer)
 
 ## need node_modules directories
 dot_is <- getwd() # expect that this is one level up

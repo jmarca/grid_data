@@ -149,11 +149,11 @@ assign.hpms.grid.cell <- function(centers){
 ##' @export
 runme <- function(){
 
-    year = Sys.getenv(c("CARB_GRID_YEAR"))
-    month = Sys.getenv(c("CARB_GRID_MONTH"))
-    day = Sys.getenv(c("CARB_GRID_DAY"))
-    gridenv = Sys.getenv(c("AIRBASIN"))
-    basin = gridenv[1]
+    year = as.numeric(Sys.getenv(c("CARB_GRID_YEAR"))[1])
+    month = as.numeric(Sys.getenv(c("CARB_GRID_MONTH"))[1])
+    day = as.numeric(Sys.getenv(c("CARB_GRID_DAY"))[1])
+    basin = Sys.getenv(c("AIRBASIN"))[1]
+
     df.grid <- get.grids.with.detectors(basin)
     print('dim df grid')
     print(dim(df.grid))

@@ -99,6 +99,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         }
         rm(grid.pred)
     }
+
     rm(predf)
     ## for(model.name in names(var.models)){
     ##     grid.pred <- predictions[[model.name]]
@@ -110,24 +111,27 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
     rearranger <- NULL
     doccount <- 0
     for(sim.site in 1:(length(df.all.predictions))){
-        tempdf <- df.all.predictions[[sim.site]]
-        rnm = names(tempdf)
-        names(tempdf) <- gsub('.aadt.frac','',x=rnm)
-        if(is.null(rearranger)){
-            rearranger <- rearrange_data(names(tempdf))
-        }
+        rnm <- names( df.all.predictions[[sim.site]] )
 
-        storedf <- plyr::dlply(tempdf,plyr::.(ts),rearranger)
-        ## strip the attributes added by plyr
-        attributes(storedf) <- NULL
+        rnm  <- gsub('.aadt.frac','',x=rnm)
+        if(is.null(rearranger)){
+            rearranger <- rearrange_data(rnm)
+        }
+        names( df.all.predictions[[sim.site]] ) <- rnm
+        storedf <- list()
+        for(i in 1:length(df.all.predictions[[sim.site]][['ts']])){
+            storedf[[i]] <- rearranger(df.all.predictions[[sim.site]][i,])
+        }
 
         print(paste(sim.site,
                     storedf[[1]]['_id']))
+
         res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
-        rm(tempdf)
+
         rm(storedf)
         doccount <- doccount + res
     }
+
     gc()
     ## print(paste('saved',doccount,'docs'))
     return ()
@@ -295,9 +299,10 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##' @param var.models the models to use for predictions
 ##' @param year the year, for writing to the correct db entry
 ##' @param curlH the curl handle for couchdb
-##' @return nothing at all
+##' @return 0 or 1+
 ##' @author James E. Marca
 predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year,curlH){
+
     ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
     ts.un <- sort(unique(ts2))
     ts.ct <- sort(unique(df.fwy.data$tsct))
@@ -307,7 +312,23 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    returnval <- 0
+    dolimit <-  300
+    if(length(picked)>dolimit){
+        returnval <- length(picked) - dolimit
+        ## just do 100 for now
+        ## by chopping down hpms.idx
+        keep.idx <- picked < 0 ## all of them are FALSE, of course
+        ## only keep 100 values
+        keep.idx[1:dolimit] <- TRUE
+        picked <- picked[keep.idx]
+
+    }
+
+    print(paste('processing',length(picked),'cells'))
+
+
+    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -327,7 +348,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     }
 
-    return ()
+    return (returnval)
 }
 
 ##' Model fraction changes in space based on hourly freeway observations
@@ -358,19 +379,25 @@ model.fwy.data <- function(df.fwy.data){
 ##' @param year the year of this analysis
 ##' @return nothing at all
 ##' @author James E. Marca
-processing.sequence <- function(df.fwy.data,
+processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
-                                year){
+                                year,month,day){
 
 
     curlH <- RCurl::getCurlHandle()
-
+    df.fwy.data <- get.raft.of.grids(df.fwy.grid
+                                    ,day=day
+                                    ,month=month
+                                    ,year=year)
     hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
     hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
     if(length(hpms[,1])<1){
         print(paste('all done'))
-        return ()
+        ## rm(df.fwy.data)
+        ## rm(curlH)
+        return (0)
     }
+    returnval <- 0
     if(length(unique(df.fwy.data$s.idx))<2){
         ## one cell is not enough freeway grid cells to build a
         ## spatial model.
@@ -379,16 +406,20 @@ processing.sequence <- function(df.fwy.data,
         assign.fraction(df.fwy.data,hpms,year,curlH)
 
     }else{
+        ## still here, only process 100
+
         ## model, then predict
         var.models <- model.fwy.data(df.fwy.data)
         ## predict
-        predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
+        returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
 
     }
 
-    print(paste('end processing.sequence memory',pryr::mem_used()))
+    ## rm(df.fwy.data)
+    ## rm(curlH)
+    ## print(paste('end processing.sequence memory',pryr::mem_used()))
 
-    return()
+    return(returnval)
 }
 
 ##' Process a month of data day by day
@@ -406,26 +437,13 @@ processing.sequence <- function(df.fwy.data,
 ##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
-process.data.by.day <- function(df.grid,df.hpms.grids,year,month){
-    print (month)
-    df.data <- get.raft.of.grids(df.grid,month=month,year=year)
-    ## because javascript, the month is zero based.  so if month ==
-    ## month, it is actually the wrong month (next month)
-    drop <- df.data$month==month
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day){
+    print (paste(year,month,day,pryr::mem_used()))
+    ## don't care about true number of days per month
+    returnval <- processing.sequence(df.grid,df.hpms.grids
+                                    ,year=year
+                                    ,month=month
+                                    ,day=day)
 
-    df.kp <- df.data[!drop,]
-
-    rm (df.data)
-    print(dim(df.kp))
-    print(paste('month',month,'memory',pryr::mem_used()))
-    plyr::d_ply(df.kp, plyr::.(day), processing.sequence,
-                .parallel = TRUE,
-                .progress = "none", df.hpms.grids,year)
-
-    ## for(dy in 1:max(df.kp$day)){
-    ##     print(paste('processing',dy))
-    ##     day.idx <-  df.kp$day == dy
-    ##     data.model.and.predict(df.fwy.data=df.kp[day.idx,],df.hpms.grids,year)
-    ## }
-    return ()
+    return (returnval)
 }

@@ -149,55 +149,61 @@ assign.hpms.grid.cell <- function(centers){
 ##' @export
 runme <- function(){
 
-  year = Sys.getenv(c("CARB_GRID_YEAR"))
-  gridenv = Sys.getenv(c("AIRBASIN"))
-  basin = gridenv[1]
+    year = as.numeric(Sys.getenv(c("CARB_GRID_YEAR"))[1])
+    month = as.numeric(Sys.getenv(c("CARB_GRID_MONTH"))[1])
+    day = as.numeric(Sys.getenv(c("CARB_GRID_DAY"))[1])
+    basin = Sys.getenv(c("AIRBASIN"))[1]
+
     df.grid <- get.grids.with.detectors(basin)
     print('dim df grid')
     print(dim(df.grid))
 
-  df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
-  df.hpms.grids <- get.grids.with.hpms(basin)
+    df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
+    df.hpms.grids <- get.grids.with.hpms(basin)
     print('dim df hpms grid')
     print(dim(df.hpms.grids))
 
-  df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
-
-  months=1:12
-  for(month in months){
-
-      ## cluster **ONLY** the grid cells with valid data
-      data.count <- get.rowcount.of.grids(df.grid,month=month,year=year)
-
-      df.grid.data <- df.grid[data.count>0,]
-
-      ## want clusters of about 20
-      numclust = ceiling(dim(df.grid.data)[1] / 20)
-      if(numclust > 10) numclust = 10
-      print(paste('numclust is ',numclust,'dims is',dim(df.grid.data)[1]))
-      if(numclust > 0){
-        cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
-        centers <- as.data.frame(cl$medoids)
-        centers$clustering = cl$clustering[rownames(cl$medoids)]
-
-          ## create the assigning function based on the clustered centers
-        ascl <- assign.hpms.grid.cell(centers)
-        df.hpms.grids$cluster <- -1
-        for(i in 1:length(df.hpms.grids$lat)){
-            df.hpms.grids$cluster[i] <- ascl(df.hpms.grids[i,])
-        }
+    df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
 
-        print(paste('processing',basin,year))
+    ## fake days have no data
 
-        for(cl.i in 1:numclust){
-          print(paste('cluster',cl.i,'of',numclust))
-          grid.idx <- cl$clustering==cl.i
-          hpms.idx <- df.hpms.grids$cluster==cl.i
-          process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year,month)
-        }
-     }else{
-       print('skipping, no data')
-     }
-  }
+    ## cluster **ONLY** the grid cells with valid data
+    data.count <- get.rowcount.of.grids(df.grid,
+                                        day=day,month=month,year=year)
+
+    df.grid.data <- df.grid[data.count>0,]
+
+    if(dim(df.grid.data)[1] == 0){
+        print('skipping, no data')
+        next
+    }
+
+    ## want clusters of about 20
+    numclust = ceiling(dim(df.grid.data)[1] / 20)
+    if(numclust > 10) numclust = 10
+    print(paste('numclust is ',numclust,'dims is',dim(df.grid.data)[1]))
+    cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
+    centers <- as.data.frame(cl$medoids)
+    centers$clustering = cl$clustering[rownames(cl$medoids)]
+
+    ## create the assigning function based on the clustered centers
+    ascl <- assign.hpms.grid.cell(centers)
+    df.hpms.grids$cluster <- -1
+    for(i in 1:length(df.hpms.grids$lat)){
+        df.hpms.grids$cluster[i] <- ascl(df.hpms.grids[i,])
+    }
+
+
+    print(paste('processing',basin,year,month,day))
+    ## first make sure that the clusters are not too big.  if so, catch next pass
+    returnval <- 0
+    for(cl.i in 1:numclust){
+        print(paste('cluster',cl.i,'of',numclust))
+        grid.idx <- cl$clustering==cl.i
+        hpms.idx <- df.hpms.grids$cluster==cl.i
+        somereturnval <- process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year=year,month=month,day=day)
+        returnval <- max(returnval,somereturnval )
+    }
+    return (returnval)
 }

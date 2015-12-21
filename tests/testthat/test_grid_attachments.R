@@ -3,6 +3,7 @@ library('RPostgreSQL')
 m <- dbDriver("PostgreSQL")
 ## requires environment variables be set externally
 
+print(config$postgresql)
 spatialvds.con <-  dbConnect(m
                             ,user=config$postgresql$auth$username
                             ,port=config$postgresql$port

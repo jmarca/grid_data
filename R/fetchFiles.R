@@ -201,7 +201,7 @@ load.grid.data.from.couchdb <- function(basin,year){
     attname <- make.att.name(basin,year)
     getres <- couch.get.attachment(dbname,id,'save.RData')
     if(is.null(getres)){
-        return data.frame()
+        return (data.frame())
     }
     varnames <- names(getres)
     barfl <- getres[[1]][[varnames[1]]]
@@ -252,7 +252,7 @@ load.hpms.grid.data.from.couchdb <- function(basin,year){
     attname <- make.att.name(basin,year)
     getres <- couch.get.attachment(dbname,id,'save.RData')
     if(is.null(getres)){
-        return data.frame()
+        return (data.frame())
     }
     varnames <- names(getres)
     barfl <- getres[[1]][[varnames[1]]]

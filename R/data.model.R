@@ -299,9 +299,10 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##' @param var.models the models to use for predictions
 ##' @param year the year, for writing to the correct db entry
 ##' @param curlH the curl handle for couchdb
-##' @return nothing at all
+##' @return 0 or 1+
 ##' @author James E. Marca
 predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year,curlH){
+
     ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
     ts.un <- sort(unique(ts2))
     ts.ct <- sort(unique(df.fwy.data$tsct))
@@ -311,7 +312,23 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     picked <- 1:length(df.hpms.grid.locations[,1])
     if(length(picked)>1)    picked = sample(picked)
 
-    num.cells = 10 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    returnval <- 0
+    dolimit <-  300
+    if(length(picked)>dolimit){
+        returnval <- length(picked) - dolimit
+        ## just do 100 for now
+        ## by chopping down hpms.idx
+        keep.idx <- picked < 0 ## all of them are FALSE, of course
+        ## only keep 100 values
+        keep.idx[1:dolimit] <- TRUE
+        picked <- picked[keep.idx]
+
+    }
+
+    print(paste('processing',length(picked),'cells'))
+
+
+    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -331,7 +348,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     }
 
-    return ()
+    return (returnval)
 }
 
 ##' Model fraction changes in space based on hourly freeway observations
@@ -378,8 +395,9 @@ processing.sequence <- function(df.fwy.grid,
         print(paste('all done'))
         ## rm(df.fwy.data)
         ## rm(curlH)
-        return ()
+        return (0)
     }
+    returnval <- 0
     if(length(unique(df.fwy.data$s.idx))<2){
         ## one cell is not enough freeway grid cells to build a
         ## spatial model.
@@ -388,10 +406,12 @@ processing.sequence <- function(df.fwy.grid,
         assign.fraction(df.fwy.data,hpms,year,curlH)
 
     }else{
+        ## still here, only process 100
+
         ## model, then predict
         var.models <- model.fwy.data(df.fwy.data)
         ## predict
-        predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
+        returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
 
     }
 
@@ -399,7 +419,7 @@ processing.sequence <- function(df.fwy.grid,
     ## rm(curlH)
     ## print(paste('end processing.sequence memory',pryr::mem_used()))
 
-    return()
+    return(returnval)
 }
 
 ##' Process a month of data day by day
@@ -420,10 +440,10 @@ processing.sequence <- function(df.fwy.grid,
 process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day){
     print (paste(year,month,day,pryr::mem_used()))
     ## don't care about true number of days per month
-    processing.sequence(df.grid,df.hpms.grids
-                       ,year=year
-                       ,month=month
-                       ,day=day)
+    returnval <- processing.sequence(df.grid,df.hpms.grids
+                                    ,year=year
+                                    ,month=month
+                                    ,day=day)
 
-    return ()
+    return (returnval)
 }

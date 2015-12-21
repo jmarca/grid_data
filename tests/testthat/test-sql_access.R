@@ -25,7 +25,7 @@ test_that("get grids",{
     df.grid.detectors <- get.grids.with.detectors(basin)
     expect_equal(dim(df.grid.detectors),c(176,4))
 
-    df.grid.hpms <- get.grids.with.hpms(basin)
+    df.grid.hpms <- get.grids.with.hpms.from.postgres(basin)
     expect_equal(dim(df.grid.hpms),c(1785,4))
 
 })

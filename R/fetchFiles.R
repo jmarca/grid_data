@@ -167,6 +167,123 @@ get.raft.of.grids <- function(df.grid.subset,year,month,day){
     return(df.mrg[keep,])
 }
 
+load.grid.data.from.couchdb <- function(year,month,day,basin){
+    df.grid <- data.frame()
+    ## some sort of code to fetch an attachment
+    return(df.grid)
+}
+##' Make a canonical attachment name
+##'
+##' @title make.att.name
+##' @param basin the basin, two letters
+##' @param year the year.  Actually any year will do
+##' @return the name, as a string
+##' @author James E. Marca
+make.att.name <- function(basin,year){
+    return (paste(basin,year,'RData',sep='.'))
+}
+##' Retrieve the grid data dataframe from couchdb as an attachment
+##'
+##' Note that this uses RCurl to fetch a dataframe from couchdb as a
+##' binary.  This works well in test, but under load I've had
+##' craziness with RCurl, so if you start getting flaky errors check
+##' here
+##'
+##' @title load.grid.data.from.couchdb
+##' @param basin the basin, two letter code
+##' @param year the year
+##' @return a data frame, retrieved from couchdb
+##' @author James E. Marca
+load.grid.data.from.couchdb <- function(basin,year){
+    config <- rcouchutils::get.config()
+    db <- config$couchdb$grid_detectors
+    docid <- paste(basin,'hwygrids',sep='_')
+    attname <- make.att.name(basin,year)
+    getres <- couch.get.attachment(dbname,id,'save.RData')
+    if(is.null(getres)){
+        return data.frame()
+    }
+    varnames <- names(getres)
+    barfl <- getres[[1]][[varnames[1]]]
+    return(barfl)
+}
+##' Save grid data for a basin to couchdb
+##'
+##' Rather than hitting PostgreSQL over and over and over again for
+##' the same exact data with a rather expensive call, instead just do
+##' it once and save it and use it from CouchDB
+##'
+##' @title attach.grid.data.to.couchdb
+##' @param basin the basin, two letter code
+##' @param year the year
+##' @return the result of the attach call.  Res is a list, wth members
+##'     ok, id, rev, and ok should be TRUE
+##' @author James E. Marca
+attach.grid.data.to.couchdb <- function(df.grid,basin,year){
+    config <- rcouchutils::get.config()
+    db <- config$couchdb$grid_detectors
+    docid <- paste(basin,'hwygrids',sep='_')
+    ## save the dataframe to a temp file
+    ## attach sample RData file
+    attname <- make.att.name(basin,year)
+
+    file_location <- paste(tempdir(),attname,sep='/')
+    save(df.grid,file=file_location,compress='xz')
+    res <- couch.attach(db,docid,file_location)
+
+    return (res)
+}
+##' Retrieve the grid data dataframe from couchdb as an attachment
+##'
+##' Note that this uses RCurl to fetch a dataframe from couchdb as a
+##' binary.  This works well in test, but under load I've had
+##' craziness with RCurl, so if you start getting flaky errors check
+##' here
+##'
+##' @title load.grid.data.from.couchdb
+##' @param basin the basin, two letter code
+##' @param year the year
+##' @return a data frame, retrieved from couchdb
+##' @author James E. Marca
+load.hpms.grid.data.from.couchdb <- function(basin,year){
+    config <- rcouchutils::get.config()
+    db <- config$couchdb$grid_detectors
+    docid <- paste(basin,'hpmsgrids',sep='_')
+    attname <- make.att.name(basin,year)
+    getres <- couch.get.attachment(dbname,id,'save.RData')
+    if(is.null(getres)){
+        return data.frame()
+    }
+    varnames <- names(getres)
+    barfl <- getres[[1]][[varnames[1]]]
+    return(barfl)
+}
+##' Save grid data for a basin to couchdb
+##'
+##' Rather than hitting PostgreSQL over and over and over again for
+##' the same exact data with a rather expensive call, instead just do
+##' it once and save it and use it from CouchDB
+##'
+##' @title attach.grid.data.to.couchdb
+##' @param basin the basin, two letter code
+##' @param year the year
+##' @return the result of the attach call.  Res is a list, wth members
+##'     ok, id, rev, and ok should be TRUE
+##' @author James E. Marca
+attach.hpms.grid.data.to.couchdb <- function(df.grid,basin,year){
+    config <- rcouchutils::get.config()
+    db <- config$couchdb$grid_detectors
+    docid <- paste(basin,'hpmsgrids',sep='_')
+    ## save the dataframe to a temp file
+    ## attach sample RData file
+    attname <- make.att.name(basin,year)
+
+    file_location <- paste(tempdir(),attname,sep='/')
+    save(df.grid,file=file_location,compress='xz')
+    res <- couch.attach(db,docid,file_location)
+
+    return (res)
+}
 
 ##' Get rowcount of grids
 ##'

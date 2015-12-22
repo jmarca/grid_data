@@ -40,7 +40,7 @@ get.grids.with.hpms <- function(basin){
     ## print(grid.query)
     rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
     df.grid <- RPostgreSQL::fetch(rs,n=-1)
-    df.grid$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
+    df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
 
 
     df.grid

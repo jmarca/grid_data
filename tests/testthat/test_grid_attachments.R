@@ -6,16 +6,7 @@ rcouchutils::couch.makedb(config$couchdb$grid_hpms)
 
 
 test_that("get hwy grids",{
-    config <- rcouchutils::get.config(Sys.getenv('TEST_CONFIG'))
-    library('RPostgreSQL')
-    m <- dbDriver("PostgreSQL")
-    ## requires environment variables be set externally
 
-    spatialvds.con <-  dbConnect(m
-                                ,user=config$postgresql$auth$username
-                                ,port=config$postgresql$port
-                                ,host=config$postgresql$host
-                                ,dbname=config$postgresql$db)
 
     basin <-  'SJV'
     year <- 2012
@@ -23,7 +14,7 @@ test_that("get hwy grids",{
     ## first use the old sql plain method
     df.grid.detectors <- get.grids.with.detectors(basin)
     print(dim(df.grid.detectors))
-    expect_equal(dim(df.grid.detectors),c(176,4))
+    expect_equal(dim(df.grid.detectors),c(176,5))
 
     ## then use the new functions.  first, couchdb should be empty
     d.g.d2 <- load.grid.data.from.couchdb('hwy',basin,year)
@@ -31,13 +22,13 @@ test_that("get hwy grids",{
 
     expect_equal(dim(d.g.d2),c(0,0))
 
-    d.g.d2 <- load.grid.data.from.postgresql(basin,year)
+    d.g.d2 <- load.grids.with.hwy(basin,year)
 
     expect_equal(dim(d.g.d2),c(176,5))
     expect_equal(d.g.d2[,1],df.grid.detectors[,1])
     ## can probably also do the others, but not geo_id
 
-    ## now the df should also be in couchdb
+    ## now the df should also be in fs and couchdb
     d.g.d3 <- load.grid.data.from.couchdb('hwy',basin,year)
     expect_equal(dim(d.g.d2),dim(d.g.d3))
     expect_equal(d.g.d2,d.g.d3)
@@ -52,7 +43,7 @@ test_that("get hpms grids",{
 
     ## first use the old sql plain method
     df.grid.hpms <- get.grids.with.hpms(basin)
-    expect_equal(dim(df.grid.hpms),c(1785,4))
+    expect_equal(dim(df.grid.hpms),c(1785,5))
 
     ## then use the new functions.  first, fs should be empty
     d.g.d.fs <- load.grid.data.from.fs('hpms',basin,year)
@@ -67,7 +58,7 @@ test_that("get hpms grids",{
     d.g.d2 <- load.grids.with.hpms(basin,year)
     print(dim(d.g.d2))
 
-    expect_equal(dim(d.g.d2),c(1785,4))
+    expect_equal(dim(d.g.d2),c(1785,5))
 
     expect_equal(d.g.d2[,1],df.grid.hpms[,1])
     ## can probably also do the others, but not geo_id

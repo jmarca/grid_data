@@ -43,4 +43,5 @@ spatialvds.con <-  dbConnect(m
 
 process.result <- runme()
 print(paste('done, quitting with',process.result))
+if(process.result>0) process.resut=10
 quit(save="no",status=process.result)

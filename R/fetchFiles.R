@@ -167,11 +167,6 @@ get.raft.of.grids <- function(df.grid.subset,year,month,day){
     return(df.mrg[keep,])
 }
 
-load.grid.data.from.couchdb <- function(year,month,day,basin){
-    df.grid <- data.frame()
-    ## some sort of code to fetch an attachment
-    return(df.grid)
-}
 ##' Make a canonical attachment name
 ##'
 ##' @title make.att.name
@@ -179,34 +174,39 @@ load.grid.data.from.couchdb <- function(year,month,day,basin){
 ##' @param year the year.  Actually any year will do
 ##' @return the name, as a string
 ##' @author James E. Marca
-make.att.name <- function(basin,year){
-    return (paste(basin,year,'RData',sep='.'))
+make.att.name <- function(str,basin,year){
+    return (paste(basin,str,year,'RData',sep='.'))
 }
-##' Retrieve the grid data dataframe from couchdb as an attachment
+
+##' Retrieve the grid data dataframe from local filesystem
 ##'
 ##' Note that this uses RCurl to fetch a dataframe from couchdb as a
 ##' binary.  This works well in test, but under load I've had
 ##' craziness with RCurl, so if you start getting flaky errors check
 ##' here
 ##'
-##' @title load.grid.data.from.couchdb
+##' @title load.grid.data.from.fs
+##' @param typ some string uniquifying the type of data to load.
+##'     either 'hwy' or 'hpms' at the moment
 ##' @param basin the basin, two letter code
 ##' @param year the year
 ##' @return a data frame, retrieved from couchdb
 ##' @author James E. Marca
-load.grid.data.from.couchdb <- function(basin,year){
-    config <- rcouchutils::get.config()
-    db <- config$couchdb$grid_detectors
-    docid <- paste(basin,'hwygrids',sep='_')
-    attname <- make.att.name(basin,year)
-    getres <- couch.get.attachment(dbname,id,'save.RData')
-    if(is.null(getres)){
-        return (data.frame())
+load.grid.data.from.fs <- function(typ,basin,year){
+    df <- data.frame()
+    dot_is <- getwd()
+    attname <- make.att.name(typ,basin,year)
+    file.path <- paste(dot_is,'data',attname,sep='/')
+    exists.file <- dir(path=paste(dot_is,'data',sep='/'),pattern=attname)
+    print(exists.file)
+    if(length(exists.file) != 0){
+        env <- new.env()
+        res <- load(file=file.path,envir = env)
+        df <- env[[res]]
     }
-    varnames <- names(getres)
-    barfl <- getres[[1]][[varnames[1]]]
-    return(barfl)
+    return(df)
 }
+
 ##' Save grid data for a basin to couchdb
 ##'
 ##' Rather than hitting PostgreSQL over and over and over again for
@@ -214,22 +214,26 @@ load.grid.data.from.couchdb <- function(basin,year){
 ##' it once and save it and use it from CouchDB
 ##'
 ##' @title attach.grid.data.to.couchdb
+##' @param uniquestr some unique string.  'hwy' or 'hpms'
+##' @param df.grid the data to save to couchdb as an attachment
 ##' @param basin the basin, two letter code
 ##' @param year the year
 ##' @return the result of the attach call.  Res is a list, wth members
 ##'     ok, id, rev, and ok should be TRUE
 ##' @author James E. Marca
-attach.grid.data.to.couchdb <- function(df.grid,basin,year){
+attach.grid.data.to.couchdb <- function(uniquestr,df.grid,basin,year){
     config <- rcouchutils::get.config()
     db <- config$couchdb$grid_detectors
-    docid <- paste(basin,'hwygrids',sep='_')
+    docid <- paste(basin,sep='_')
     ## save the dataframe to a temp file
     ## attach sample RData file
-    attname <- make.att.name(basin,year)
+    attname <- make.att.name(uniquestr,basin,year)
 
-    file_location <- paste(tempdir(),attname,sep='/')
-    save(df.grid,file=file_location,compress='xz')
-    res <- couch.attach(db,docid,file_location)
+    dot_is <- getwd()
+    file.path <- paste(dot_is,'data',attname,sep='/')
+    print(file.path)
+    save(df.grid,file=file.path,compress='xz')
+    res <- rcouchutils::couch.attach(db,docid,file.path)
 
     return (res)
 }
@@ -241,49 +245,32 @@ attach.grid.data.to.couchdb <- function(df.grid,basin,year){
 ##' here
 ##'
 ##' @title load.grid.data.from.couchdb
+##' @param uniquestr the identifying string.  'hwy' or 'hpms'
 ##' @param basin the basin, two letter code
 ##' @param year the year
 ##' @return a data frame, retrieved from couchdb
 ##' @author James E. Marca
-load.hpms.grid.data.from.couchdb <- function(basin,year){
+load.grid.data.from.couchdb <- function(uniquestr,basin,year){
     config <- rcouchutils::get.config()
     db <- config$couchdb$grid_detectors
-    docid <- paste(basin,'hpmsgrids',sep='_')
-    attname <- make.att.name(basin,year)
-    getres <- couch.get.attachment(dbname,id,'save.RData')
+    docid <- paste(basin,sep='_')
+    attname <- make.att.name(uniquestr,basin,year)
+    getres <- rcouchutils::couch.get.attachment(db,docid,attname)
     if(is.null(getres)){
         return (data.frame())
     }
     varnames <- names(getres)
     barfl <- getres[[1]][[varnames[1]]]
+    dot_is <- getwd()
+    file.path <- paste(dot_is,'data',attname,sep='/')
+    exists.file <- dir(path=paste(dot_is,'data',sep='/'),pattern=varnames[1])
+    ## print(exists.file)
+    if(length(exists.file) == 0){
+        save(barfl,file=file.path,compress='xz')
+    }
     return(barfl)
 }
-##' Save grid data for a basin to couchdb
-##'
-##' Rather than hitting PostgreSQL over and over and over again for
-##' the same exact data with a rather expensive call, instead just do
-##' it once and save it and use it from CouchDB
-##'
-##' @title attach.grid.data.to.couchdb
-##' @param basin the basin, two letter code
-##' @param year the year
-##' @return the result of the attach call.  Res is a list, wth members
-##'     ok, id, rev, and ok should be TRUE
-##' @author James E. Marca
-attach.hpms.grid.data.to.couchdb <- function(df.grid,basin,year){
-    config <- rcouchutils::get.config()
-    db <- config$couchdb$grid_detectors
-    docid <- paste(basin,'hpmsgrids',sep='_')
-    ## save the dataframe to a temp file
-    ## attach sample RData file
-    attname <- make.att.name(basin,year)
 
-    file_location <- paste(tempdir(),attname,sep='/')
-    save(df.grid,file=file_location,compress='xz')
-    res <- couch.attach(db,docid,file_location)
-
-    return (res)
-}
 
 ##' Get rowcount of grids
 ##'

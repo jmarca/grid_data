@@ -22,12 +22,12 @@ select.grids.in.basin <- function(basin){
 ##' the query, you should see that the rule "inside" is that the
 ##' centroid of the grid lies inside of the shape.
 ##'
-##' @title get.grids.with.hpms.from.postgres
+##' @title get.grids.with.hpms
 ##' @param basin the name of the basin (two letter abbreviation)
 ##' @return the result of the query: rows of i_cell,j_cell, centroid
 ##'     lon, centroid lat
 ##' @author James E. Marca
-get.grids.with.hpms.from.postgres <- function(basin){
+get.grids.with.hpms <- function(basin){
     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
     ## select grid cells with hpm records in them
     grid.query <- paste(grid.with
@@ -57,11 +57,14 @@ get.grids.with.hpms.from.postgres <- function(basin){
 ##' @author James E. Marca
 load.grids.with.hpms <- function(basin,year){
 
-    df.grid <- load.hpms.grid.data.from.couchdb(basin,year)
+    df.grid <- load.grid.data.from.fs('hpms',basin,year)
+    if(nrow(df.grid) == 0){
+        df.grid <- load.grid.data.from.couchdb('hpms',basin,year)
+    }
     if(nrow(df.grid) == 0){
         df.grid <- get.grids.with.hpms(basin)
-        attach.hpms.grid.data.to.couchdb(df.grid,basin,year)
-
+        res <- attach.grid.data.to.couchdb('hpms',df.grid,basin,year)
+        ## print(res)
     }
     return(df.grid)
 }
@@ -174,7 +177,7 @@ load.grid.data.from.postgresql <- function(basin,year){
     if(nrow(df.grid)>0){
         df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
     }
-    attach.grid.data.to.couchdb(df.grid,basin,year)
+    attach.grid.data.to.couchdb('hwy',df.grid,basin,year)
     return(df.grid)
 }
 

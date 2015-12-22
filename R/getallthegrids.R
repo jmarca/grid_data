@@ -40,14 +40,17 @@ get.grids.with.hpms <- function(basin){
     ## print(grid.query)
     rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
     df.grid <- RPostgreSQL::fetch(rs,n=-1)
+    df.grid$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
+
+
     df.grid
 }
 
 
 ##' Get all the grids in an airbasin shape with hpms data
 ##'
-##' This function will first try to get from couchdb, then will call
-##' postgresql version.
+##' This function will first try to get from fs, then couchdb, then
+##' will call postgresql version.
 ##'
 ##' @title load.grids.with.hpms
 ##' @param basin the name of the basin (two letter abbreviation)
@@ -68,6 +71,7 @@ load.grids.with.hpms <- function(basin,year){
     }
     return(df.grid)
 }
+
 
 
 
@@ -93,7 +97,33 @@ get.grids.with.detectors <- function(basin){
     ## print(grid.query)
     rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
     df.grid <- RPostgreSQL::fetch(rs,n=-1)
+    df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
     df.grid
+}
+
+##' Get all the grids in an airbasin shape with hwy data
+##'
+##' This function will first try to get from fs, then couchdb, then
+##' will call postgresql version.
+##'
+##' @title load.grids.with.hwy
+##' @param basin the name of the basin (two letter abbreviation)
+##' @param year the year, for couchdb call/save
+##' @return the result of the query: rows of i_cell,j_cell, centroid
+##'     lon, centroid lat
+##' @author James E. Marca
+load.grids.with.hwy <- function(basin,year){
+
+    df.grid <- load.grid.data.from.fs('hwy',basin,year)
+    if(nrow(df.grid) == 0){
+        df.grid <- load.grid.data.from.couchdb('hwy',basin,year)
+    }
+    if(nrow(df.grid) == 0){
+        df.grid <- get.grids.with.detectors(basin)
+        res <- attach.grid.data.to.couchdb('hwy',df.grid,basin,year)
+        ## print(res)
+    }
+    return(df.grid)
 }
 
 ##' Pick off HPMS grids inside the effective "range" of detector grids
@@ -169,17 +199,6 @@ assign.hpms.grid.cell <- function(centers){
     }
 }
 
-load.grid.data.from.postgresql <- function(basin,year){
-
-    df.grid <- get.grids.with.detectors(basin)
-    print('dim df grid')
-    print(dim(df.grid))
-    if(nrow(df.grid)>0){
-        df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
-    }
-    attach.grid.data.to.couchdb('hwy',df.grid,basin,year)
-    return(df.grid)
-}
 
 
 ##' The main function that does everything.
@@ -196,10 +215,7 @@ runme <- function(){
     basin = Sys.getenv(c("AIRBASIN"))[1]
 
     ## load data from couchdb attachments, if available
-    df.grid.data <- load.grid.data.from.couchdb(basin,year)
-    if(is.null(nrow(df.grid.data)) || nrow(df.grid.data) == 0){
-        df.grid.data <- load.grid.data.from.postgresql(year,month,day,basin)
-    }
+    df.grid <- load.grids.with.hwy(basin,year)
 
     ## cluster **ONLY** the grid cells with valid data
     data.count <- get.rowcount.of.grids(df.grid,
@@ -211,18 +227,18 @@ runme <- function(){
 
     if(nrow(df.grid.data) == 0){
         print('skipping, no data')
-        reutrn (0)
+        return (0)
     }
+    print('dim df hwy grid')
+    print(dim(df.grid.data))
 
 
     df.hpms.grids <- get.grids.with.hpms(basin,year)
     print('dim df hpms grid')
     print(dim(df.hpms.grids))
 
-    df.hpms.grids$geo_id <- paste(df.hpms.grids$i_cell,df.hpms.grids$j_cell,sep='_')
 
-
-    ## fake days have no data
+    ## remember, fake days have no data, so you're safe here
 
     ## want clusters of about 20
     numclust = ceiling(dim(df.grid.data)[1] / 20)

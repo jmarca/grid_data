@@ -13,3 +13,4 @@ config.json
 .tern-port
 man
 log
+/data/*RData

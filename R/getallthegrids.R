@@ -233,7 +233,7 @@ runme <- function(){
     print(dim(df.grid.data))
 
 
-    df.hpms.grids <- get.grids.with.hpms(basin,year)
+    df.hpms.grids <- load.grids.with.hpms(basin,year)
     print('dim df hpms grid')
     print(dim(df.hpms.grids))
 

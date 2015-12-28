@@ -261,8 +261,6 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 ##' @return nothing
 ##' @author James E. Marca
 assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
-    print('buggy version')
-    return ()
     ## just assign frac to hpms cells
     picked <- 1:length(df.hpms.grid.locations[,1])
     ts2 <- strptime(df.fwy.data$ts,"%Y-%m-%d %H:%M",tz='UTC')
@@ -270,22 +268,44 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     ts.ct <- sort(unique(df.fwy.data$tsct))
     ts.ts = sort(unique(df.fwy.data$ts))
     config <- rcouchutils::get.config()
-    for(sim.set in picked){
-        df.pred.grid <- df.hpms.grid.locations[sim.set,]
+    rearranger <-  NULL
+
+
+    for(sim.site in picked){
         df.all.predictions <- data.frame('ts'= ts.ts)
-        df.all.predictions$i_cell <- df.hpms.grid.locations[sim.set,'i_cell']
-        df.all.predictions$j_cell <- df.hpms.grid.locations[sim.set,'j_cell']
-        df.all.predictions$geom_id <- df.hpms.grid.locations[sim.set,'geo_id']
+        df.all.predictions$i_cell <- df.hpms.grid.locations[sim.site,'i_cell']
+        df.all.predictions$j_cell <- df.hpms.grid.locations[sim.site,'j_cell']
+        df.all.predictions$geom_id <- df.hpms.grid.locations[sim.site,'geo_id']
+        df.all.predictions['_id']  <- paste(df.all.predictions$geom_id,
+                                            df.all.predictions$ts,
+                                            sep='_')
 
         for(variable in c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')){
             df.all.predictions[,variable] <- df.fwy.data[,variable]
         }
+
         if(dim(df.all.predictions)[2]>4){
             ## now dump that back into couchdb
-            rnm = names(df.all.predictions)
-            names(df.all.predictions) <- gsub('.aadt.frac','',x=rnm)
-            save.these = ! is.na(df.all.predictions$n)
-            rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,df.all.predictions[save.these,],h=curlH)
+            rnm <-  names(df.all.predictions)
+            rnm  <- gsub('.aadt.frac','',x=rnm)
+            names(df.all.predictions) <- rnm
+            if(is.null(rearranger)){
+                rearranger <- rearrange_data(rnm)
+            }
+
+            save.these <-  ! is.na(df.all.predictions$n)
+            df.all.predictions <- df.all.predictions[save.these,]
+            storedf <- list()
+
+            for(i in 1:nrow(df.all.predictions)){
+                storedf[[i]] <- rearranger(df.all.predictions[i,])
+                ## print(paste(storedf[[i]]))
+
+            }
+            print(paste(sim.site,
+                        storedf[[1]]['_id']))
+
+            res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
         }
     }
     return ()

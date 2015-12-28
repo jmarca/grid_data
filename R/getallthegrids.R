@@ -243,18 +243,24 @@ runme <- function(){
     ## want clusters of about 20
     numclust = ceiling(dim(df.grid.data)[1] / 20)
     if(numclust > 10) numclust = 10
-    print(paste('numclust is ',numclust,'dims is',dim(df.grid.data)[1]))
-    cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
-    centers <- as.data.frame(cl$medoids)
-    centers$clustering = cl$clustering[rownames(cl$medoids)]
+    print(paste('numclust is ',numclust,'num grid cells is',nrow(df.grid.data)))
+    cl <- NULL
+    if(numclust > 1){
+        cl <- cluster::clara(as.matrix(df.grid.data[,c('lon','lat')]),numclust,pamLike = TRUE,samples=100)
+        centers <- as.data.frame(cl$medoids)
+        centers$clustering = cl$clustering[rownames(cl$medoids)]
 
-    ## create the assigning function based on the clustered centers
-    ascl <- assign.hpms.grid.cell(centers)
-    df.hpms.grids$cluster <- -1
-    for(i in 1:length(df.hpms.grids$lat)){
-        df.hpms.grids$cluster[i] <- ascl(df.hpms.grids[i,])
+        ## create the assigning function based on the clustered centers
+        ascl <- assign.hpms.grid.cell(centers)
+        df.hpms.grids$cluster <- -1
+        for(i in 1:length(df.hpms.grids$lat)){
+            df.hpms.grids$cluster[i] <- ascl(df.hpms.grids[i,])
+        }
+    }else{
+        ## everything is in one cluster
+        df.hpms.grids$cluster <- 1
+        cl <- data.frame('clustering'=1)
     }
-
 
     print(paste('processing',basin,year,month,day))
     ## first make sure that the clusters are not too big.  if so, catch next pass

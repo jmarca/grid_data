@@ -313,7 +313,9 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     if(length(picked)>1)    picked = sample(picked)
 
     returnval <- 0
-    dolimit <-  50
+
+    dolimit <-  50  # the higher this number, the more likely to run out of ram
+
     if(length(picked)>dolimit){
         returnval <- length(picked) - dolimit
         ## just do 100 for now

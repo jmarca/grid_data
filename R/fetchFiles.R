@@ -237,6 +237,32 @@ attach.grid.data.to.couchdb <- function(uniquestr,df.grid,basin,year){
 
     return (res)
 }
+##' Un-Save grid data for a basin to couchdb
+##'
+##' Rather than hitting PostgreSQL over and over and over again for
+##' the same exact data with a rather expensive call, instead just do
+##' it once and save it and use it from CouchDB.  But then you have
+##' more HPMS data , or more highway data, and you suddenly don't want
+##' to use this data, but rather get new data.  So call this function
+##'
+##' @title detach.grid.data.from.couchdb
+##' @param uniquestr some unique string.  'hwy' or 'hpms'
+##' @param basin the basin, two letter code
+##' @param year the year
+##' @return the result of the attach call.  Res is a list, wth members
+##'     ok, id, rev, and ok should be TRUE
+##' @author James E. Marca
+detach.grid.data.from.couchdb <- function(uniquestr,basin,year){
+    config <- rcouchutils::get.config()
+    db <- config$couchdb$grid_detectors
+    docid <- paste(basin,sep='_')
+    ## save the dataframe to a temp file
+    ## attach sample RData file
+    attname <- make.att.name(uniquestr,basin,year)
+
+    res <- rcouchutils::couch.detach(db,docid,attname)
+    return (res)
+}
 ##' Retrieve the grid data dataframe from couchdb as an attachment
 ##'
 ##' Note that this uses RCurl to fetch a dataframe from couchdb as a

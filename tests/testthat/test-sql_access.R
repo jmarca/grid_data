@@ -23,9 +23,24 @@ test_that("get grids",{
     basin <-  'SJV'
 
     df.grid.detectors <- get.grids.with.detectors(basin)
-    expect_equal(dim(df.grid.detectors),c(176,4))
+    expect_equal(dim(df.grid.detectors),c(176,5))
 
-    df.grid.hpms <- get.grids.with.hpms.from.postgres(basin)
-    expect_equal(dim(df.grid.hpms),c(1785,4))
+    df.grid.hpms <- get.grids.with.hpms(basin)
+    expect_equal(dim(df.grid.hpms),c(1785,5))
+
+    df.grid.hpms.2 <- get.grids.with.hpms(basin,'')
+    expect_equal(dim(df.grid.hpms.2),c(1785,5))
+
+    df.grid.hpms.3 <- get.grids.with.hpms(basin,NULL)
+    expect_equal(dim(df.grid.hpms.3),c(1785,5))
+
+    df.grid.hpms.2014 <- get.grids.with.hpms(basin,'hpms.hpms_2014')
+    expect_equal(dim(df.grid.hpms),c(2072,5))
+
+    df.grid.hpms.loaded <- load.grids.with.hpms(basin,2010)
+    expect_equal(dim(df.grid.hpms.loaded),c(1785,5))
+
+    df.grid.hpms.loaded <- load.grids.with.hpms(basin,2014)
+    expect_equal(dim(df.grid.hpms.loaded),c(2072,5))
 
 })

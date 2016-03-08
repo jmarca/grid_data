@@ -24,20 +24,24 @@ select.grids.in.basin <- function(basin){
 ##'
 ##' @title get.grids.with.hpms
 ##' @param basin the name of the basin (two letter abbreviation)
+##' @param hpms_geom_table the hpms table to use defaults to hpms.hpms_geom
 ##' @return the result of the query: rows of i_cell,j_cell, centroid
 ##'     lon, centroid lat
 ##' @author James E. Marca
-get.grids.with.hpms <- function(basin){
+get.grids.with.hpms <- function(basin,hpms_geom_table='hpms.hpms_geom'){
+    if(is.null(hpms_geom_table) || hpms_geom_table == ''){
+        hpms_geom_table <- 'hpms.hpms_geom'
+    }
     grid.with = paste("with basingrids as (",select.grids.in.basin(basin),")",sep='')
     ## select grid cells with hpm records in them
     grid.query <- paste(grid.with
                        ," select i_cell,j_cell,st_x(centroid) as lon, st_y(centroid) as lat"
                        ," from basingrids"
-                       ," join hpms.hpms_geom hg on st_intersects(basingrids.geom4326,hg.geom)"
-                       ," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
+                       ," join ",hpms_geom_table," hg on st_intersects(basingrids.geom4326,hg.geom)"
+                       ##," join hpms.hpms_link_geom hd on (hg.id=hd.geo_id)"
                        ," group by i_cell,j_cell,lon,lat"
                        ,sep='')
-    ## print(grid.query)
+    print(grid.query)
     rs <- RPostgreSQL::dbSendQuery(spatialvds.con,grid.query)
     df.grid <- RPostgreSQL::fetch(rs,n=-1)
     df.grid$geo_id <- paste(df.grid$i_cell,df.grid$j_cell,sep='_')
@@ -65,7 +69,12 @@ load.grids.with.hpms <- function(basin,year){
         df.grid <- load.grid.data.from.couchdb('hpms',basin,year)
     }
     if(nrow(df.grid) == 0){
-        df.grid <- get.grids.with.hpms(basin)
+        df.grid <- NULL
+        if(year > 2010 && year <=  2014){
+            df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_2014_table)
+        }else{
+            df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_table)
+        }
         res <- attach.grid.data.to.couchdb('hpms',df.grid,basin,year)
         ## print(res)
     }

@@ -17,7 +17,7 @@
     "lodash": "",
     "optimist": "",
     "pg": "",
-    "queue-async": "^1.0.7",
+    "d3-queue": "",
     "request": "",
     "rstats_couch_utils": "jmarca/rstats_couch_utils",
     "rstats_remote_files": "jmarca/rstats_remote_files",

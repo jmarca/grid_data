@@ -19,7 +19,7 @@ var config={}
 
 var utils=require('./utils.js')
 
-var test_db ='test%2fcarb%2fgrid%2fstate4k'
+var testdb ='test%2fcarb%2fgrid%2fstate4k'
 
 before(function(done){
     config_okay(config_file,function(err,c){
@@ -27,9 +27,7 @@ before(function(done){
             console.log('Problem trying to parse options in ',config_file)
             throw new Error(err)
         }
-        if(c.couchdb.db === undefined){
-            c.couchdb.db = 'testdb'
-        }
+        c.couchdb.db = testdb
         config = c
         utils.create_tempdb(config,done)
         return null
@@ -115,13 +113,88 @@ describe('couch file with 2012 and multiple freeeways',function(){
            q.await(function(err,result_grab,result_aadt){
                task.grid = result_grab.grid
                task.aadt = result_aadt.aadt
-               console.log(Object.keys(task))
-               console.log(task.aadt)
                // all set to set couch saving
                couch_file (task
                            ,function(err,cbtask){
                                should.not.exist(err)
-                               return done(err)
+                               var couch ='http://'+
+                                       [config.couchdb.host+':'+config.couchdb.port
+                                        ,config.couchdb.db].join('/')
+                               var uri1 = couch +'/header'
+                               var uri2 = couch +'/_all_docs?'+['include_docs=true'
+                                                                ,'startkey=%22'+[task.i,task.j,'2012-01-01%2000:00'].join('_')+'%22'
+                                                                ,'endkey=%22'+[task.i,task.j,'2012-12-31%2024:00'].join('_')+'%22'].join('&')
+
+                               var q_couch_checks = queue()
+                               q_couch_checks.defer(function(cb){
+                                   request.get(uri1
+                                               ,function(e,r,b){
+                                                   if(e) return cb(e)
+                                                   should.exist(b)
+                                                   var c = JSON.parse(b)
+                                                   should.exist(c)
+                                                   c.should.have.property('header')
+                                                   c.should.have.property('unmapper')
+                                                   return cb()
+                                               })
+                                   return null
+                               })
+
+                               q_couch_checks.defer(function(cb){
+                                   request.get(uri2
+                                               ,function(e,r,b){
+                                                   if(e) return cb(e)
+                                                   should.exist(b)
+                                                   var c = JSON.parse(b)
+                                                   should.exist(c)
+                                                   c.rows.length.should.eql(8784)
+                                                   if(c.rows !== undefined){
+                                                       c.rows.forEach(function(row){
+                                                           var nval = 0
+                                                           var hhval = 0
+                                                           var nhval = 0
+                                                           row.should.have.property('key')
+                                                           row.should.have.property('value')
+                                                           row.should.have.property('doc')
+
+                                                           var doc=row.doc
+                                                           doc.should.have.property('geom_id')
+                                                           doc.should.have.property('data')
+                                                           doc.data.should.have.length(3)
+                                                           doc.should.have.property('i_cell',task.i)
+                                                           doc.should.have.property('j_cell',task.j)
+                                                           doc.should.have.property('aadt_frac')
+
+                                                           doc.data.forEach(function(datarow){
+                                                               nval += datarow[2]
+                                                               hhval += datarow[3]
+                                                               nhval += datarow[4]
+                                                           })
+                                                           // check n
+                                                           doc.aadt_frac.should.have.property('n')
+                                                           nval /= (619562+327744+303961)
+                                                           nval.should.be.approximately(doc.aadt_frac.n,0.01)
+
+                                                           // check hh
+                                                           doc.aadt_frac.should.have.property('hh')
+                                                           hhval /= (10933+7420+6022)
+                                                           hhval.should.be.approximately(doc.aadt_frac.hh,0.01)
+
+                                                           // check nhh
+                                                           doc.aadt_frac.should.have.property('not_hh')
+                                                           nhval /= (15174+10690+7562)
+                                                           nhval.should.be.approximately(doc.aadt_frac.not_hh,0.01)
+
+                                                       })
+                                                   }
+                                                   return cb()
+                                               })
+                                   return null
+
+                               })
+                               q_couch_checks.await(function(err){
+                                   return done(err)
+                               });
                            })
                return null
            })

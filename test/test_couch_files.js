@@ -20,7 +20,7 @@ var config={}
 
 var utils=require('./utils.js')
 
-var test_db ='test%2fcarb%2fgrid%2fstate4k'
+var testdb ='test%2fcarb%2fgrid%2fstate4k'
 
 before(function(done){
     config_okay(config_file,function(err,c){
@@ -28,9 +28,7 @@ before(function(done){
             console.log('Problem trying to parse options in ',config_file)
             throw new Error(err)
         }
-        if(c.couchdb.db === undefined){
-            c.couchdb.db = 'testdb'
-        }
+        c.couchdb.db = testdb
         config = Object.assign(config,c)
         utils.create_tempdb(config,done)
         return null
@@ -132,8 +130,7 @@ function create_couch_entries(task,done){
 
                                                doc.should.have.property('geom_id')
                                                doc.should.have.property('data')
-                                               doc.data.should.have.property('length')
-                                               doc.data.length.should.be.above(0)
+                                               doc.data.should.have.length(1)
                                                doc.should.have.property('i_cell')
                                                doc.should.have.property('j_cell')
                                                doc.should.have.property('aadt_frac')

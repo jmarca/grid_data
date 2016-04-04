@@ -34,8 +34,8 @@ before(function(done){
 })
 after(function(done){
     // uncomment to bail in development
-    // return done()
-    utils.delete_tempdb(config,done)
+     return done()
+    //utils.delete_tempdb(config,done)
     return null
 })
 
@@ -45,15 +45,13 @@ describe('couch file with 2012 and multiple freeeways',function(){
        ,function(done){
 
            var task={file:__dirname+'/files/hourly/2012/231/55.json'
-                     ,'i':231
-                     ,'j':55
                      ,options:{
                          'postgresql': config.postgresql,
                          'couchdb':config.couchdb
                      }
                      ,year:2012}
            task.options.postgresql.db=config.postgresql.osmdb
-           var q = queue()
+           var q = queue(1)
            q.defer(function(cb){
                grab_geom(task
                          ,function(err,cbtask){
@@ -110,8 +108,11 @@ describe('couch file with 2012 and multiple freeeways',function(){
            })
 
            q.await(function(err,result_grab,result_aadt){
-               task.grid = result_grab.grid
-               task.aadt = result_aadt.aadt
+               task = Object.assign(task,result_grab,result_aadt)
+               task.should.have.property('grid')
+               task.grid.should.have.property('i_cell',231)
+               task.grid.should.have.property('j_cell',55)
+
                // all set to set couch saving
                couch_file (task
                            ,function(err,cbtask){
@@ -121,8 +122,8 @@ describe('couch file with 2012 and multiple freeeways',function(){
                                         ,config.couchdb.db].join('/')
                                var uri1 = couch +'/header'
                                var uri2 = couch +'/_all_docs?'+['include_docs=true'
-                                                                ,'startkey=%22'+[task.i,task.j,'2012-01-01%2000:00'].join('_')+'%22'
-                                                                ,'endkey=%22'+[task.i,task.j,'2012-12-31%2024:00'].join('_')+'%22'].join('&')
+                                                                ,'startkey=%22'+[task.grid.i_cell,task.grid.j_cell,'2012-01-01%2000:00'].join('_')+'%22'
+                                                                ,'endkey=%22'+[task.grid.i_cell,task.grid.j_cell,'2012-12-31%2024:00'].join('_')+'%22'].join('&')
 
                                var q_couch_checks = queue()
                                q_couch_checks.defer(function(cb){
@@ -140,6 +141,7 @@ describe('couch file with 2012 and multiple freeeways',function(){
                                })
 
                                q_couch_checks.defer(function(cb){
+                                   console.log(uri2)
                                    request.get(uri2
                                                ,function(e,r,b){
                                                    if(e) return cb(e)
@@ -160,8 +162,8 @@ describe('couch file with 2012 and multiple freeeways',function(){
                                                            doc.should.have.property('geom_id')
                                                            doc.should.have.property('data')
                                                            doc.data.should.have.length(3)
-                                                           doc.should.have.property('i_cell',task.i)
-                                                           doc.should.have.property('j_cell',task.j)
+                                                           doc.should.have.property('i_cell',task.grid.i_cell)
+                                                           doc.should.have.property('j_cell',task.grid.j_cell)
                                                            doc.should.have.property('aadt_frac')
 
                                                            doc.data.forEach(function(datarow){

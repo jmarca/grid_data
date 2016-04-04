@@ -2,7 +2,6 @@
 
 var should = require('should')
 
-//var async = require('async')
 var queue = require('d3-queue').queue
 
 var compute_aadt = require('calvad_compute_aadt')

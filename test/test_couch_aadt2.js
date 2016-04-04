@@ -141,7 +141,7 @@ describe('couch file with 2012 and multiple freeeways',function(){
                                })
 
                                q_couch_checks.defer(function(cb){
-                                   console.log(uri2)
+                                   // console.log(uri2)
                                    request.get(uri2
                                                ,function(e,r,b){
                                                    if(e) return cb(e)

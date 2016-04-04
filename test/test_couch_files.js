@@ -201,8 +201,8 @@ describe('couch_file',function(){
        ,function(done){
            var task={file:'./test/files/hourly/2009/100/263.json'
                      ,'year':2009
-                     ,'i':100
-                     ,'j':263
+                     ,'grid':{'i_cell':100
+                              ,'j_cell':263}
                      ,'options':{'couchdb':config.couchdb}
                     }
            aadtFile(task,function(e,t2){

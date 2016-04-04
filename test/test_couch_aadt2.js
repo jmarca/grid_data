@@ -34,8 +34,8 @@ before(function(done){
 })
 after(function(done){
     // uncomment to bail in development
-     return done()
-    //utils.delete_tempdb(config,done)
+    // return done()
+    utils.delete_tempdb(config,done)
     return null
 })
 

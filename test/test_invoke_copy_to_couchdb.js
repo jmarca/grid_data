@@ -35,6 +35,7 @@ before(function(done){
         bq.defer(utils.create_tempdb,config)
         bq.defer(function(cb){
             // dump a temporary config file
+            config.couchdb.grid_detectors=config.couchdb.db
             fs.writeFile(config_file_2,JSON.stringify(config),
                          {'encoding':'utf8'
                           ,'mode':0o600
@@ -97,9 +98,11 @@ describe('test invoke copy_to_couchdb.js',function(){
                    var lines = data.split(/\r?\n/)
                    // console.log(lines)
                    var numrecords
-                   var regex = /writing\s*(\d+)\s*/i;
+                   var write_regex = /writing\s*(\d+)\s*/i;
+                   var err_regex = /error/i;
                    lines.forEach(function(line){
-                       var result = regex.exec(line)
+                       var result = write_regex.exec(line)
+                       line.should.not.match(err_regex)
                        if(result && result[1]){
                            numrecords = +result[1]
                        }

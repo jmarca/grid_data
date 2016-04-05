@@ -32,42 +32,9 @@ test_that("get hpms grids",{
     json.data <- get.grid.file.from.couch(i,j,
                                           start.date,
                                           end.date)
+    df <- parseGridRecord(json.data)
 
-        if('error' %in% names(json.data) || length(json.data$rows)<2) next
-        ## print(length(json.data$rows))
-        df <- parseGridRecord(json.data)
-
-    ## first use the old sql plain method
-    df.grid.hpms <- get.grids.with.hpms(basin)
-    expect_equal(dim(df.grid.hpms),c(1785,5))
-
-    ## then use the new functions.  first, fs should be empty
-    d.g.d.fs <- load.grid.data.from.fs('hpms',basin,year)
-    expect_equal(dim(d.g.d.fs),c(0,0))
-
-    ## then couchdb, also should be empty
-    d.g.d.cdb <- load.grid.data.from.couchdb('hpms',basin,year)
-    expect_equal(dim(d.g.d.cdb),c(0,0))
-
-    ## the canonical fetch should get from postgresql, and populate
-    ## fs, couchdb
-    d.g.d2 <- load.grids.with.hpms(basin,year)
-    print(dim(d.g.d2))
-    print(d.g.d2[1,])
-
-    expect_equal(dim(d.g.d2),c(1785,5))
-
-    expect_equal(d.g.d2[,1],df.grid.hpms[,1])
-    ## can probably also do the others, but not geo_id
-
-    ## now the df should also be in fs and couchdb
-    d.g.d.fs <- load.grid.data.from.fs('hpms',basin,year)
-    expect_equal(d.g.d.fs,d.g.d2)
-
-    d.g.d.cdb <- load.grid.data.from.couchdb('hpms',basin,year)
-    expect_equal(d.g.d.cdb,d.g.d2)
-
-    res <- unlink('data/SJV.hpms.2012.RData')
+    expect_equal(dim(df),c(25,8))
 
 })
 

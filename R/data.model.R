@@ -248,7 +248,10 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
             ## no error means there is a doc.  If config says to
             ## recheck, check if there is a date
             if(! is.null(config$recheck)){
-                if(row$doc$modelversion < config$recheck)
+                if(row$doc$modelversion < config$recheck){
+                    ## done but needs redoing
+                    hpmstodo[i] <- TRUE
+                }
             }
         }
 
@@ -312,6 +315,9 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
                 storedf[[i]] <- rearranger(df.all.predictions[i,])
                 ## print(paste(storedf[[i]]))
 
+            }
+            if(config$recheck){
+                storedf$modelversion <- config$recheck
             }
             print(paste(sim.site,
                         storedf[[1]]['_id']))

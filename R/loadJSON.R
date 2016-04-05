@@ -16,20 +16,31 @@ default.header =c("ts","freeway","n","hh","not_hh","o","avg_veh_spd","avg_hh_wei
 
 parseGridRecord <- function(rawjson){
   ## trim it down
-  rows = rawjson$rows
-  df <- plyr::ldply(rows,.fun=function(x){
-    dd <- unlist(x$doc$data)[1:16]
-    daadt <- unlist(x$doc$aadt_frac)
-    dicell <- unlist(x$doc$i_cell)
-    djcell <- unlist(x$doc$j_cell)
-    c(dd,daadt,dicell,djcell)
-  })
-  names(df) <- c(default.header[1:16],'n.aadt.frac','hh.aadt.frac','nhh.aadt.frac','i_cell','j_cell')
-  df[,3:21] <- apply(df[,3:21],2,as.numeric)
-  df[,2] <- as.factor(df[,2])
-  df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
-  df$tsct <- as.POSIXct(df$ts2)
-  df
+    rows <- rawjson$rows
+    df <- plyr::ldply(rows,.fun=function(x){
+
+        ## the below stuff works, but is irrelevant right now as I am
+        ## only worried about aadt_frac and timestamp.  so instead of
+        ## the following, just grab one row to get the time stuff
+
+        ## ## data is a ragged array.  build one row at a time
+        ## dd <- NULL
+        ## plyr::l_ply(x$doc$data,.fun=function(row){
+        ##     dd <<- c(dd,unlist(row)[1:16])
+        ## })
+        ## dd <- matrix(dd,nrow=length(x$doc$data),byrow=TRUE)
+
+        justtime <- unlist(x$doc$data)[1] ## should introspect here
+        daadt <- unlist(x$doc$aadt_frac)
+        dicell <- unlist(x$doc$i_cell)
+        djcell <- unlist(x$doc$j_cell)
+        c(justtime,daadt,dicell,djcell)
+    })
+    names(df) <- c(default.header[1],'n.aadt.frac','hh.aadt.frac','nhh.aadt.frac','i_cell','j_cell')
+    df[,2:6] <- apply(df[,2:6],2,as.numeric)
+    df$ts2 <- strptime(df$ts,"%Y-%m-%d %H:%M",tz='UTC')
+    df$tsct <- as.POSIXct(df$ts2)
+    df
 }
 
 aadt.cols <- c('n.aadt.frac','hh.aadt.frac','nhh.aadt.frac')

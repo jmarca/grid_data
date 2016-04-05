@@ -227,20 +227,31 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
     picker <- 1:length(df.hpms.grid.locations[,1])
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
-    result = rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
+    incl.docs <- FALSE
+    if(! is.null(config$recheck)){
+        incl.docs <- TRUE
+    }
+    result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
                                             keys=couch.test.docs,
-                                            include.docs=FALSE,h=curlH)
-    rows = result$rows
+                                            include.docs=incl.docs,h=curlH)
+    rows <- result$rows
     print(length(rows))
     for(i in 1:length(rows)){
-        row = rows[[i]]
+        row <- rows[[i]]
         ## print(row$key)
         if('error' %in% names(row)){
             ## error means doc not found, need to do this grid
             hpmstodo[i] <- TRUE
             ## print(paste('todo',row$key,couch.test.docs[i]))
             ##true means need to do this document
-         }
+        } else {
+            ## no error means there is a doc.  If config says to
+            ## recheck, check if there is a date
+            if(! is.null(config$recheck)){
+                if(row$doc$modelversion < config$recheck)
+            }
+        }
+
     }
     print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     return (df.hpms.grid.locations[hpmstodo,])

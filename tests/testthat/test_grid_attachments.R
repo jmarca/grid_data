@@ -57,6 +57,7 @@ test_that("get hpms grids",{
     ## fs, couchdb
     d.g.d2 <- load.grids.with.hpms(basin,year)
     print(dim(d.g.d2))
+    print(d.g.d2[1,])
 
     expect_equal(dim(d.g.d2),c(1785,5))
 

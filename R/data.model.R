@@ -426,7 +426,7 @@ model.fwy.data <- function(df.fwy.data){
 processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
                                 year,month,day,
-                                max.iter=5){
+                                maxiter=2){
 
     iter <- 0
     curlH <- RCurl::getCurlHandle()
@@ -459,7 +459,7 @@ processing.sequence <- function(df.fwy.grid,
         ## model, then predict
         var.models <- model.fwy.data(df.fwy.data)
             ## predict
-        while(length(hpms[,1])>0 && iter < max.iter){
+        while(length(hpms[,1])>0 && iter < maxiter){
             returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
             hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
             iter <- iter + 1
@@ -487,13 +487,14 @@ processing.sequence <- function(df.fwy.grid,
 ##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
-process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day){
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day,maxiter=2){
     print (paste(year,month,day,pryr::mem_used()))
     ## don't care about true number of days per month
     returnval <- processing.sequence(df.grid,df.hpms.grids
                                     ,year=year
                                     ,month=month
-                                    ,day=day)
+                                    ,day=day
+                                    ,maxiter)
 
     return (returnval)
 }

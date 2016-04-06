@@ -426,7 +426,7 @@ model.fwy.data <- function(df.fwy.data){
 processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
                                 year,month,day,
-                                max.iter=8){
+                                max.iter=5){
 
     iter <- 0
     curlH <- RCurl::getCurlHandle()

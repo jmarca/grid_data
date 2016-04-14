@@ -2,29 +2,31 @@
 
 var should = require('should')
 
-var async = require('async')
-var _ = require('lodash')
 var grab_geom = require('../lib/grab_geom').grab_geom
 var fs = require('fs')
 
+var path    = require('path')
+var rootdir = path.normalize(__dirname)
+var config_file = rootdir+'/../test.config.json'
+var config_okay = require('config_okay')
+var config={}
+before(function(done){
+    config_okay(config_file,function(err,c){
+        if(err){
+            console.log('Problem trying to parse options in ',config_file)
+            throw new Error(err)
+        }
+        config = c
 
-var env = process.env;
-var puser = process.env.PSQL_USER
-var ppass = process.env.PSQL_PASS
-var phost = process.env.PSQL_TEST_HOST || '127.0.0.1'
-var pport = process.env.PSQL_PORT || 5432
-
-var options ={'host':phost
-             ,'port':pport
-             ,'username':puser
-             ,'password':ppass
-             }
+        return done()
+    })
+})
 
 describe('grab_geom',function(){
     it('should get the right grid cell geometry, given a grid file name'
       ,function(done){
            var task={file:'./test/files/monthly/2009/100/263.json'
-                    ,options:options}
+                    ,options:config}
            grab_geom(task
                     ,function(err,cbtask){
                          // err should not exist

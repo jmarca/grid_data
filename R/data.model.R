@@ -121,8 +121,10 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         storedf <- list()
         for(i in 1:length(df.all.predictions[[sim.site]][['ts']])){
             storedf[[i]] <- rearranger(df.all.predictions[[sim.site]][i,])
+            if(config$recheck){
+                storedf[[i]][['modelversion']] <- config$recheck
+            }
         }
-
         print(paste(sim.site,
                     storedf[[1]]['_id']))
 
@@ -227,20 +229,35 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
 
     picker <- 1:length(df.hpms.grid.locations[,1])
     couch.test.docs <- paste(df.hpms.grid.locations$geo_id,couch.test.date,sep='_')
-    result = rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
+    incl.docs <- FALSE
+    if(! is.null(config$recheck)){
+        incl.docs <- TRUE
+    }
+    result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
                                             keys=couch.test.docs,
-                                            include.docs=FALSE,h=curlH)
-    rows = result$rows
+                                            include.docs=incl.docs,h=curlH)
+    rows <- result$rows
     print(length(rows))
     for(i in 1:length(rows)){
-        row = rows[[i]]
+        row <- rows[[i]]
         ## print(row$key)
         if('error' %in% names(row)){
             ## error means doc not found, need to do this grid
             hpmstodo[i] <- TRUE
             ## print(paste('todo',row$key,couch.test.docs[i]))
             ##true means need to do this document
-         }
+        } else {
+            ## no error means there is a doc.  If config says to
+            ## recheck, check if there is a date
+            if(! is.null(config$recheck)){
+                if(is.null(row$doc$modelversion)
+                   || row$doc$modelversion < config$recheck){
+                    ## done but needs redoing
+                    hpmstodo[i] <- TRUE
+                }
+            }
+        }
+
     }
     print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     return (df.hpms.grid.locations[hpmstodo,])
@@ -300,11 +317,13 @@ assign.fraction <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
             for(i in 1:nrow(df.all.predictions)){
                 storedf[[i]] <- rearranger(df.all.predictions[i,])
                 ## print(paste(storedf[[i]]))
+                if(config$recheck){
+                    storedf[[i]][['modelversion']] <- config$recheck
+                }
 
             }
             print(paste(sim.site,
                         storedf[[1]]['_id']))
-
             res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
         }
     }
@@ -396,16 +415,20 @@ model.fwy.data <- function(df.fwy.data){
 ##' Step through the jobs for modeling and predicting
 ##'
 ##' @title processing.sequence
-##' @param df.fwy.data the freeway grid cells
+##' @param df.fwy.grid the freeway grid cells
 ##' @param df.hpms.grid.locations the hpms grid cells
 ##' @param year the year of this analysis
-##' @return nothing at all
+##' @param month the month
+##' @param day the day
+##' @param max.iter max iterations.  watch RAM
+##' @return number left to do
 ##' @author James E. Marca
 processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
-                                year,month,day){
+                                year,month,day,
+                                max.iter=8){
 
-
+    iter <- 0
     curlH <- RCurl::getCurlHandle()
     df.fwy.data <- get.raft.of.grids(df.fwy.grid
                                     ,day=day
@@ -413,30 +436,35 @@ processing.sequence <- function(df.fwy.grid,
                                     ,year=year)
     hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
     hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+    returnval <- 0
+
     if(length(hpms[,1])<1){
         print(paste('all done'))
         ## rm(df.fwy.data)
         ## rm(curlH)
         return (0)
     }
-    returnval <- 0
     if(length(unique(df.fwy.data$s.idx))<2){
-        ## one cell is not enough freeway grid cells to build a
-        ## spatial model.
-        ##
-        ## just assign fraction
-        assign.fraction(df.fwy.data,hpms,year,curlH)
-
+            ## one cell is not enough freeway grid cells to build a
+            ## spatial model.
+            ##
+            ## just assign fraction
+        while(length(hpms[,1])>0){
+            assign.fraction(df.fwy.data,hpms,year,curlH)
+            hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+        }
     }else{
         ## still here, only process 100
 
         ## model, then predict
         var.models <- model.fwy.data(df.fwy.data)
-        ## predict
-        returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
-
+            ## predict
+        while(length(hpms[,1])>0 && iter < max.iter){
+            returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
+            hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+            iter <- iter + 1
+        }
     }
-
     ## rm(df.fwy.data)
     ## rm(curlH)
     ## print(paste('end processing.sequence memory',pryr::mem_used()))

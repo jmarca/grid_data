@@ -22,7 +22,8 @@ Imports:
     dplyr,
     RJSONIO,
     RCurl,
-    pryr
+    pryr,
+    jsonlite
 Suggests:
     testthat
 RoxygenNote: 5.0.1

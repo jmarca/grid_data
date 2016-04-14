@@ -14,8 +14,8 @@ describe('check_file',function(){
                 checkfile(function(err,cbtask){
                     // file should not exist
                     should.exist(err)
-                    should.not.exist(cbtask)
-                    err.should.eql(task)
+                    should.exist(cbtask)
+                    cbtask.should.eql(task)
                     done()
                 })
        })

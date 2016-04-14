@@ -159,7 +159,8 @@ get.raft.of.grids <- function(df.grid.subset,year,month,day){
         df.mrg   <- merge(df.mrg,df.bind       ,all=TRUE,by=c("s.idx","tsct",'i_cell','j_cell'))
         ##print('merging Lat, Lon')
         df.mrg <- merge(df.mrg,df.grid.subset,all.x=TRUE,all.y=FALSE,by=c('i_cell','j_cell'))
-        names(df.mrg)[c(29,30)] <- c("Longitude","Latitude")
+        names(df.mrg)[names(df.mrg) == 'lon'] <- 'Longitude'
+        names(df.mrg)[names(df.mrg) == 'lat'] <- 'Latitude'
     }
     rm (df.bind)
 

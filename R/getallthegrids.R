@@ -274,11 +274,15 @@ runme <- function(){
     print(paste('processing',basin,year,month,day))
     ## first make sure that the clusters are not too big.  if so, catch next pass
     returnval <- 0
+    maxiter <- max(1,ceiling(10/numclust))
+    print(paste('starting model loop with maxiter=',maxiter))
+
     for(cl.i in 1:numclust){
         print(paste('cluster',cl.i,'of',numclust))
         grid.idx <- cl$clustering==cl.i
         hpms.idx <- df.hpms.grids$cluster==cl.i
-        somereturnval <- process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year=year,month=month,day=day)
+        somereturnval <- process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year=year,month=month,day=day
+                                             ,maxiter=maxiter)
         returnval <- max(returnval,somereturnval )
     }
     return (returnval)

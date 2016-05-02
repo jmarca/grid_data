@@ -165,7 +165,7 @@ rearrange_data <- function(col.names){
             outpt[[col.names[numeric.cols[aadt.cols[i]]]]] <- NULL
             aadtlist[[col.names[numeric.cols[aadt.cols[i]]]]] <- row[[numeric.cols[aadt.cols[i]]]]
         }
-        outpt[['aadt']] <- aadtlist
+        outpt[['aadt_frac']] <- aadtlist
         ## print(outpt)
         return (outpt)
 

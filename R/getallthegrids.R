@@ -5,14 +5,27 @@
 ##' @return a string for use as a with or select statement
 ##' @author James E. Marca
 select.grids.in.basin <- function(basin){
-   paste("select i_cell,j_cell,"
-        ,"st_centroid(grids.geom4326) as centroid"
-        ,", grids.geom4326 as geom4326"
-        ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
-        ," where ab='",basin
-        ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
-##        ,"' and basins.geom_4326 && grids.geom4326"
-        ,sep='')
+
+    select_statement <- paste(
+        "select i_cell,j_cell,"
+       ,"st_centroid(grids.geom4326) as centroid"
+       ,", grids.geom4326 as geom4326"
+       ," from carbgrid.state4k grids ,public.carb_airbasins_aligned_03 basins"
+       ," where ab='",basin
+       ,"' and st_contains(basins.geom_4326,st_centroid(grids.geom4326))"
+        ##        ,"' and basins.geom_4326 && grids.geom4326"
+       ,sep='')
+    if(basin ==  'California'){
+
+        select_statement <- paste(
+            "select i_cell,j_cell,"
+           ,"st_centroid(grids.geom4326) as centroid"
+           ,", grids.geom4326 as geom4326"
+           ," from carbgrid.state4k grids"
+           ,sep='')
+
+    }
+    return select_statement
 }
 
 ##' Get all the grids in an airbasin shape with hpms data

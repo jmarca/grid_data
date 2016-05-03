@@ -25,7 +25,7 @@ select.grids.in.basin <- function(basin){
            ,sep='')
 
     }
-    return select_statement
+    return (select_statement)
 }
 
 ##' Get all the grids in an airbasin shape with hpms data
@@ -288,6 +288,8 @@ runme <- function(){
     ## first make sure that the clusters are not too big.  if so, catch next pass
     returnval <- 0
     maxiter <- max(1,ceiling(10/numclust))
+    # temporary hacking for all_california run
+    maxiter <- 5
     print(paste('starting model loop with maxiter=',maxiter))
 
     for(cl.i in 1:numclust){

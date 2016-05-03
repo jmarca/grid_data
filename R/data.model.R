@@ -131,9 +131,10 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
 
         rm(storedf)
+        df.all.predictions[[sim.site]] <- NULL
         doccount <- doccount + res
     }
-
+    rm(df.all.predictions)
     gc()
     ## print(paste('saved',doccount,'docs'))
     return ()
@@ -355,6 +356,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     dolimit <-  50  # the higher this number, the more likely to run out of ram
 
+    dolimit <- 500 # temporary hacking for all_california run
     if(length(picked)>dolimit){
         returnval <- length(picked) - dolimit
         ## just do 100 for now
@@ -369,7 +371,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     print(paste('processing',length(picked),'cells'))
 
 
-    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = dolimit # 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
@@ -388,7 +390,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
         group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
 
     }
-
+    # rm(var.models)
     return (returnval)
 }
 
@@ -468,7 +470,7 @@ processing.sequence <- function(df.fwy.grid,
     ## rm(df.fwy.data)
     ## rm(curlH)
     ## print(paste('end processing.sequence memory',pryr::mem_used()))
-
+    rm (var.models)
     return(returnval)
 }
 

@@ -131,7 +131,7 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
 
         rm(storedf)
-        df.all.predictions[[sim.site]] <- NULL
+
         doccount <- doccount + res
     }
     rm(df.all.predictions)
@@ -390,7 +390,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
         group.loop(df.pred.grid[idx,],var.models,ts.ts,ts.un,curlH)
 
     }
-    # rm(var.models)
+
     return (returnval)
 }
 

@@ -275,7 +275,7 @@ runme <- function(){
         ## remember, fake days have no data, so you're safe here
 
         ## want clusters of about 20
-        numclust = ceiling(dim(df.grid.data)[1] / 20)
+        numclust <- ceiling(dim(df.grid.data)[1] / 20)
         if(numclust > 10) numclust = 10
         print(paste('numclust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         cl <- NULL
@@ -311,6 +311,7 @@ runme <- function(){
         stash(year,month,day,basin,cl,df.hpms.grids,df.grid.data)
     }
 
+    numclust <- max(df.hpms.grids$cluster)
     for(cl.i in 1:numclust){
         print(paste('cluster',cl.i,'of',numclust))
         grid.idx <- cl$clustering==cl.i

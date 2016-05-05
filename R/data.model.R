@@ -436,6 +436,13 @@ processing.sequence <- function(df.fwy.grid,
     df.fwy.data <- fetch.fwy.data(year,month,day,basin)
     hpms <- fetch.hpms(year,month,day,basin)
 
+    if(length(dim(hpms)) == 2 && length(hpms[,1])<1){
+        print(paste('all done'))
+        ## rm(df.fwy.data)
+        ## rm(curlH)
+        return (0)
+    }
+
     returnval <- 0
 
     if(length(df.fwy.data) == 0){
@@ -460,6 +467,7 @@ processing.sequence <- function(df.fwy.grid,
         ## rm(curlH)
         return (0)
     }
+
     if(length(unique(df.fwy.data$s.idx))<2){
         ## one cell is not enough freeway grid cells to build a
         ## spatial model.
@@ -467,14 +475,21 @@ processing.sequence <- function(df.fwy.grid,
         ## just assign fraction
         while(length(hpms[,1])>0){
             assign.fraction(df.fwy.data,hpms,year,curlH)
+            curlH <- RCurl::getCurlHandle()
             hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+            rm(curlH)
+            stash.hpms(year,month,day,basin,hpms)
         }
     }else{
         ## still here, build model, then stash
         if(length(var.models) == 0){
             ## model, then predict
+            print('building models')
             var.models <- model.fwy.data(df.fwy.data)
+            print('saving models')
             stash.model(year,month,day,var.models)
+        }else{
+            print('using previously computed models')
         }
 
         ## predict
@@ -484,7 +499,7 @@ processing.sequence <- function(df.fwy.grid,
         rm(curlH)
         stash.hpms(year,month,day,basin,hpms)
     }
-    return(returnval)
+    return(length(hpms[,1]))
 }
 
 ##' Process a month of data day by day
@@ -502,13 +517,14 @@ processing.sequence <- function(df.fwy.grid,
 ##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
-process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day,maxiter=2){
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day,basin,maxiter=2){
     print (paste(year,month,day,pryr::mem_used()))
     ## don't care about true number of days per month
     returnval <- processing.sequence(df.grid,df.hpms.grids
                                     ,year=year
                                     ,month=month
                                     ,day=day
+                                    ,basin=basin
                                     ,maxiter)
 
     return (returnval)

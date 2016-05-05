@@ -315,8 +315,12 @@ runme <- function(){
         print(paste('cluster',cl.i,'of',numclust))
         grid.idx <- cl$clustering==cl.i
         hpms.idx <- df.hpms.grids$cluster==cl.i
-        somereturnval <- process.data.by.day(df.grid.data[grid.idx,],df.hpms.grids[hpms.idx,],year=year,month=month,day=day
-                                             ,maxiter=maxiter)
+        somereturnval <- process.data.by.day(df.grid.data[grid.idx,]
+                                            ,df.hpms.grids[hpms.idx,],year=year
+                                            ,month=month
+                                            ,day=day
+                                            ,basin=basin
+                                            ,maxiter=maxiter)
         returnval <- max(returnval,somereturnval )
     }
     return (returnval)

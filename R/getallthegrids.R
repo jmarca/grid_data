@@ -296,22 +296,24 @@ runme <- function(){
             cl <- data.frame('clustering'=1)
         }
 
-        print(paste('processing',basin,year,month,day))
-        ## first make sure that the clusters are not too big.  if so, catch next pass
-        returnval <- 0
-        maxiter <- max(1,ceiling(10/numclust))
-                                        # temporary hacking for all_california run
-        maxiter <- 5
-        print(paste('starting model loop with maxiter=',maxiter))
-
-
+s
         ## stash all of: cl, df.hpms.grids, df.grid.data by year, month,
         ## day, basin
 
         stash(year,month,day,basin,cl,df.hpms.grids,df.grid.data)
     }
 
+    print(paste('processing',basin,year,month,day))
+
+    ## first make sure that the clusters are not too big.  if so, catch next pas
     numclust <- max(df.hpms.grids$cluster)
+
+    returnval <- 0
+    maxiter <- max(1,ceiling(10/numclust))
+                                        # temporary hacking for all_california run
+    maxiter <- 1
+    print(paste('starting model loop with maxiter=',maxiter))
+
     for(cl.i in 1:numclust){
         print(paste('cluster',cl.i,'of',numclust))
         grid.idx <- cl$clustering==cl.i

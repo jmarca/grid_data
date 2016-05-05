@@ -356,7 +356,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     dolimit <-  50  # the higher this number, the more likely to run out of ram
 
-    dolimit <- 200 # temporary hacking for all_california run
+    # dolimit <- 200 # temporary hacking for all_california run
     if(length(picked)>dolimit){
         returnval <- length(picked) - dolimit
         ## just do 100 for now
@@ -437,13 +437,13 @@ processing.sequence <- function(df.fwy.grid,
     hpms <- fetch.hpms(year,month,day,basin)
 
     if(length(dim(hpms)) == 2 && length(hpms[,1])<1){
-        print(paste('all done'))
+        print(dim(hpms))
+
+        print(paste('not going to start, all done'))
         ## rm(df.fwy.data)
         ## rm(curlH)
         return (0)
     }
-
-    returnval <- 0
 
     if(length(df.fwy.data) == 0){
 
@@ -452,6 +452,9 @@ processing.sequence <- function(df.fwy.grid,
                                         ,month=month
                                         ,year=year)
         stash.fwy.data(year,month,day,basin,df.fwy.data)
+    }
+    if(length(dim(hpms)) == 0){
+
         hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
 
         curlH <- RCurl::getCurlHandle()
@@ -466,6 +469,8 @@ processing.sequence <- function(df.fwy.grid,
         ## rm(df.fwy.data)
         ## rm(curlH)
         return (0)
+    }else{
+        print(length(hpms[,1]))
     }
 
     if(length(unique(df.fwy.data$s.idx))<2){
@@ -487,14 +492,14 @@ processing.sequence <- function(df.fwy.grid,
             print('building models')
             var.models <- model.fwy.data(df.fwy.data)
             print('saving models')
-            stash.model(year,month,day,var.models)
+            ## stash.model(year,month,day,var.models)
         }else{
             print('using previously computed models')
         }
 
         ## predict
-        returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
         curlH <- RCurl::getCurlHandle()
+        predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
         hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
         rm(curlH)
         stash.hpms(year,month,day,basin,hpms)

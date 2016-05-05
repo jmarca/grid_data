@@ -319,7 +319,7 @@ runme <- function(){
                                             ,df.hpms.grids[hpms.idx,],year=year
                                             ,month=month
                                             ,day=day
-                                            ,basin=basin
+                                            ,basin=paste(basin,cl.i,numclust,sep='_')
                                             ,maxiter=maxiter)
         returnval <- max(returnval,somereturnval )
     }

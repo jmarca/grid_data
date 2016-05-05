@@ -406,7 +406,7 @@ stash <- function(year,month,day,basin,cl,df.hpms.grids,df.grid.data){
 ##' @param basin the airbasin
 ##' @return a list of [1] "cl" "df.hpms.grids" "df.grid.data"
 ##' @author James E. Marca
-fetch <- function(year,month,day,basin){
+fetch.outer.data <- function(year,month,day,basin){
     result <- list()
     ## was going to save to couchdb, but faster just to stash locally
     savepath <- 'stash'

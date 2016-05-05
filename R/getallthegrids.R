@@ -240,7 +240,7 @@ runme <- function(){
     df.hpms.grids <- NULL
     df.grid.data <- NULL
 
-    retrieve.result <- fetch(year,month,day,basin)
+    retrieve.result <- fetch.outer.data(year,month,day,basin)
 
 
     if(length(retrieve.result) == 3){

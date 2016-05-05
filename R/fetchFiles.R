@@ -483,9 +483,13 @@ fetch.model <- function(year,month,day,basin){
     result <- list()
     ## was going to save to couchdb, but faster just to stash locally
     savepath <- makepath(year,month,day,basin)
-    env <- new.env()
-    r1 <- load(file=paste(savepath,'/models.RData',sep=''),envir=env)
-    return (env[[r1]])
+    if(file.exists(savepath)){
+        env <- new.env()
+        r1 <- load(file=paste(savepath,'/models.RData',sep=''),envir=env)
+        return (env[[r1]])
+    }else{
+        return ()
+    }
 }
 
 ##' Call this to save the fwy.data
@@ -520,9 +524,13 @@ fetch.fwy.data <- function(year,month,day,basin){
     result <- list()
     ## was going to save to couchdb, but faster just to stash locally
     savepath <- makepath(year,month,day,basin)
-    env <- new.env()
-    r1 <- load(file=paste(savepath,'/fwy.data.RData',sep=''),envir=env)
-    return (env[[r1]])
+    if(file.exists(savepath)){
+        env <- new.env()
+        r1 <- load(file=paste(savepath,'/fwy.data.RData',sep=''),envir=env)
+        return (env[[r1]])
+    }else{
+        return ()
+    }
 }
 
 ##' Call this to save the hpms
@@ -557,7 +565,11 @@ fetch.hpms <- function(year,month,day,basin){
     result <- list()
     ## was going to save to couchdb, but faster just to stash locally
     savepath <- makepath(year,month,day,basin)
-    env <- new.env()
-    r1 <- load(file=paste(savepath,'/hpms.RData',sep=''),envir=env)
-    return (env[[r1]])
+    if(file.exists(savepath)){
+        env <- new.env()
+        r1 <- load(file=paste(savepath,'/hpms.RData',sep=''),envir=env)
+        return (env[[r1]])
+    }else{
+        return ()
+    }
 }

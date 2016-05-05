@@ -427,18 +427,32 @@ model.fwy.data <- function(df.fwy.data){
 ##' @author James E. Marca
 processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
-                                year,month,day,
+                                year,month,day,basin,
                                 maxiter=2){
 
     iter <- 0
-    curlH <- RCurl::getCurlHandle()
-    df.fwy.data <- get.raft.of.grids(df.fwy.grid
-                                    ,day=day
-                                    ,month=month
-                                    ,year=year)
-    hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
-    hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+
+    var.models <- fetch.model(year,month,day,basin)
+    df.fwy.data <- fetch.fwy.data(year,month,day,basin)
+    hpms <- fetch.hpms(year,month,day,basin)
+
     returnval <- 0
+
+    if(length(df.fwy.data) == 0){
+
+        df.fwy.data <- get.raft.of.grids(df.fwy.grid
+                                        ,day=day
+                                        ,month=month
+                                        ,year=year)
+        stash.fwy.data(year,month,day,basin,df.fwy.data)
+        hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
+
+        curlH <- RCurl::getCurlHandle()
+        hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+        stash.hpms(year,month,day,basin,hpms)
+        rm(curlH)
+
+    }
 
     if(length(hpms[,1])<1){
         print(paste('all done'))
@@ -447,30 +461,29 @@ processing.sequence <- function(df.fwy.grid,
         return (0)
     }
     if(length(unique(df.fwy.data$s.idx))<2){
-            ## one cell is not enough freeway grid cells to build a
-            ## spatial model.
-            ##
-            ## just assign fraction
+        ## one cell is not enough freeway grid cells to build a
+        ## spatial model.
+        ##
+        ## just assign fraction
         while(length(hpms[,1])>0){
             assign.fraction(df.fwy.data,hpms,year,curlH)
             hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
         }
     }else{
-        ## still here, only process 100
-
-        ## model, then predict
-        var.models <- model.fwy.data(df.fwy.data)
-            ## predict
-        while(length(hpms[,1])>0 && iter < maxiter){
-            returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
-            hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-            iter <- iter + 1
+        ## still here, build model, then stash
+        if(length(var.models) == 0){
+            ## model, then predict
+            var.models <- model.fwy.data(df.fwy.data)
+            stash.model(year,month,day,var.models)
         }
+
+        ## predict
+        returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
+        curlH <- RCurl::getCurlHandle()
+        hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+        rm(curlH)
+        stash.hpms(year,month,day,basin,hpms)
     }
-    ## rm(df.fwy.data)
-    ## rm(curlH)
-    ## print(paste('end processing.sequence memory',pryr::mem_used()))
-    rm (var.models)
     return(returnval)
 }
 

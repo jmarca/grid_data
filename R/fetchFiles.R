@@ -345,3 +345,219 @@ get.rowcount.of.grids <- function(df.grid.subset,year,month,day){
     ##print(df.grid.subset$rows)
     df.grid.subset$rows
 }
+
+##' Call this to save cl, df.hpms.grids, df.grid.data for next iteration
+##'
+##' Call stash to save cl, df.hpms.grids, df.grid.data to the
+##' filesystem.  Trying to save multiple round trips and such for
+##' loading, and also to fix the clustering so I can also fix the
+##' model.
+##'
+##' @title stash
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @param cl the cl to save (cluster thing)
+##' @param df.hpms.grids the hpms grids to save
+##' @param df.grid.data the highway grid data to save
+##' @return 1
+##' @author James E. Marca
+stash <- function(year,month,day,basin,cl,df.hpms.grids,df.grid.data){
+
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- 'stash'
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,year,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,month,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,day,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,basin,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    save(cl,
+         file=paste(savepath,'/cl.RData',sep=''),
+         compress='xz')
+    save(df.hpms.grids,
+         file=paste(savepath,'/df.hpms.grids.RData',sep=''),
+         compress='xz')
+    save(df.grid.data,
+         file=paste(savepath,'/df.grid.data.RData',sep=''),
+         compress='xz')
+
+    return (1)
+}
+
+##' Call this to fetch cl, df.hpms.grids, df.grid.data
+##'
+##' After you call stash, call this to fetch cl, df.hpms.grids,
+##' df.grid.data from the filesystem
+##'
+##' @title fetch
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @return a list of [1] "cl" "df.hpms.grids" "df.grid.data"
+##' @author James E. Marca
+fetch <- function(year,month,day,basin){
+    result <- list()
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- 'stash'
+
+    savepath <- paste(savepath,year,month,day,basin,sep='/')
+    if(file.exists(savepath)){
+        env <- new.env()
+        r1 <- load(file=paste(savepath,'/cl.RData',sep=''),envir=env)
+        r2 <- load(file=paste(savepath,'/df.hpms.grids.RData',sep=''),envir=env)
+        r3 <- load(file=paste(savepath,'/df.grid.data.RData',sep=''),envir=env)
+        result[[r1]] <- env[[r1]]
+        result[[r2]] <- env[[r2]]
+        result[[r3]] <- env[[r3]]
+    }
+    return(result)
+}
+##' Make a path for saving RData between runs
+##'
+##' @title makepath
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the air basin or whatever
+##' @return a path name string
+##' @author James E. Marca
+makepath <- function(year,month,day,basin){
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- 'stash'
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,year,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,month,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,day,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+
+    savepath <- paste(savepath,basin,sep='/')
+    if(!file.exists(savepath)){dir.create(savepath)}
+    return(savepath)
+}
+
+##' Call this to save the models
+##'
+##' @title stash.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @param models the models list
+##' @return 1
+##' @author James E. Marca
+stash.model <- function(year,month,day,basin,models){
+
+    savepath <- makepath(year,month,day,basin)
+    save(models,
+         file=paste(savepath,'/models.RData',sep=''),
+         compress='xz')
+    return (1)
+}
+
+##' Call this to fetch the models
+##'
+##' @title fetch.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @return the models
+##' @author James E. Marca
+fetch.model <- function(year,month,day,basin){
+    result <- list()
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- makepath(year,month,day,basin)
+    env <- new.env()
+    r1 <- load(file=paste(savepath,'/models.RData',sep=''),envir=env)
+    return (env[[r1]])
+}
+
+##' Call this to save the fwy.data
+##'
+##' @title stash.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @param fwy.data the fwy.data list
+##' @return 1
+##' @author James E. Marca
+stash.fwy.data <- function(year,month,day,basin,fwy.data){
+
+    savepath <- makepath(year,month,day,basin)
+    save(fwy.data,
+         file=paste(savepath,'/fwy.data.RData',sep=''),
+         compress='xz')
+    return (1)
+}
+
+##' Call this to fetch the fwy.data
+##'
+##' @title fetch.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @return the fwy.data
+##' @author James E. Marca
+fetch.fwy.data <- function(year,month,day,basin){
+    result <- list()
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- makepath(year,month,day,basin)
+    env <- new.env()
+    r1 <- load(file=paste(savepath,'/fwy.data.RData',sep=''),envir=env)
+    return (env[[r1]])
+}
+
+##' Call this to save the hpms
+##'
+##' @title stash.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @param hpms the hpms list
+##' @return 1
+##' @author James E. Marca
+stash.hpms <- function(year,month,day,basin,hpms){
+
+    savepath <- makepath(year,month,day,basin)
+    save(hpms,
+         file=paste(savepath,'/hpms.RData',sep=''),
+         compress='xz')
+    return (1)
+}
+
+##' Call this to fetch the hpms
+##'
+##' @title fetch.model
+##' @param year the year
+##' @param month the month
+##' @param day the day
+##' @param basin the airbasin
+##' @return the hpms
+##' @author James E. Marca
+fetch.hpms <- function(year,month,day,basin){
+    result <- list()
+    ## was going to save to couchdb, but faster just to stash locally
+    savepath <- makepath(year,month,day,basin)
+    env <- new.env()
+    r1 <- load(file=paste(savepath,'/hpms.RData',sep=''),envir=env)
+    return (env[[r1]])
+}

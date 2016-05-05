@@ -296,7 +296,6 @@ runme <- function(){
             cl <- data.frame('clustering'=1)
         }
 
-s
         ## stash all of: cl, df.hpms.grids, df.grid.data by year, month,
         ## day, basin
 

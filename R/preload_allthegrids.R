@@ -1,6 +1,6 @@
 ##' The main function that does everything.
 ##'
-##' @title runme
+##' @title run.preloading
 ##' @return null
 ##' @author James E. Marca
 ##' @export

@@ -496,7 +496,7 @@ fetch.model <- function(year,month,day,basin){
 
 ##' Call this to save the fwy.data
 ##'
-##' @title stash.model
+##' @title stash.fwy.data
 ##' @param year the year
 ##' @param month the month
 ##' @param day the day
@@ -515,7 +515,7 @@ stash.fwy.data <- function(year,month,day,basin,fwy.data){
 
 ##' Call this to fetch the fwy.data
 ##'
-##' @title fetch.model
+##' @title fetch.fwy.data
 ##' @param year the year
 ##' @param month the month
 ##' @param day the day
@@ -538,7 +538,7 @@ fetch.fwy.data <- function(year,month,day,basin){
 
 ##' Call this to save the hpms
 ##'
-##' @title stash.model
+##' @title stash.hpms
 ##' @param year the year
 ##' @param month the month
 ##' @param day the day
@@ -557,7 +557,7 @@ stash.hpms <- function(year,month,day,basin,hpms){
 
 ##' Call this to fetch the hpms
 ##'
-##' @title fetch.model
+##' @title fetch.hpms
 ##' @param year the year
 ##' @param month the month
 ##' @param day the day

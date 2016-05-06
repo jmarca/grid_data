@@ -247,6 +247,9 @@ runme <- function(){
         cl <- retrieve.result$cl
         df.hpms.grids <- retrieve.result$df.hpms.grids
         df.grid.data <- retrieve.result$df.grid.data
+    }
+    if(length(dim(df.hpms.grids))>0){
+        # okay data saved
     }else{
         ## load data from couchdb attachments, if available
         df.grid <- load.grids.with.hwy(basin,year)
@@ -324,6 +327,11 @@ runme <- function(){
                                             ,basin=paste(basin,cl.i,numclust,sep='_')
                                             ,maxiter=maxiter)
         returnval <- max(returnval,somereturnval )
+    }
+    if(returnval == 0){
+        ## save dummies to FS to reduce space
+        stash(year,month,day,basin,list(),list(),list())
+
     }
     return (returnval)
 }

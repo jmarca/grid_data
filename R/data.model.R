@@ -431,8 +431,9 @@ processing.sequence <- function(df.fwy.grid,
                                 maxiter=2){
 
     iter <- 0
+    curlH <- RCurl::getCurlHandle()
 
-    var.models <- fetch.model(year,month,day,basin)
+    var.models <- list() # fetch.model(year,month,day,basin)
     df.fwy.data <- fetch.fwy.data(year,month,day,basin)
     hpms <- fetch.hpms(year,month,day,basin)
 
@@ -441,7 +442,7 @@ processing.sequence <- function(df.fwy.grid,
 
         print(paste('not going to start, all done'))
         ## rm(df.fwy.data)
-        ## rm(curlH)
+
         return (0)
     }
 
@@ -457,17 +458,18 @@ processing.sequence <- function(df.fwy.grid,
 
         hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
 
-        curlH <- RCurl::getCurlHandle()
         hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
         stash.hpms(year,month,day,basin,hpms)
-        rm(curlH)
+
 
     }
 
     if(length(hpms[,1])<1){
         print(paste('all done'))
         ## rm(df.fwy.data)
-        ## rm(curlH)
+
+        ## save empties to reduce space needs
+        stash.fwy.data(year,month,day,basin,list())
         return (0)
     }else{
         print(length(hpms[,1]))
@@ -480,9 +482,9 @@ processing.sequence <- function(df.fwy.grid,
         ## just assign fraction
         while(length(hpms[,1])>0){
             assign.fraction(df.fwy.data,hpms,year,curlH)
-            curlH <- RCurl::getCurlHandle()
+
             hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-            rm(curlH)
+
             stash.hpms(year,month,day,basin,hpms)
         }
     }else{
@@ -498,12 +500,13 @@ processing.sequence <- function(df.fwy.grid,
         }
 
         ## predict
-        curlH <- RCurl::getCurlHandle()
+
         predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
         hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-        rm(curlH)
+
         stash.hpms(year,month,day,basin,hpms)
     }
+    rm(curlH)
     return(length(hpms[,1]))
 }
 

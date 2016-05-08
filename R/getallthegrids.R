@@ -330,7 +330,7 @@ runme <- function(){
     }
     if(returnval == 0){
         ## save dummies to FS to reduce space
-        stash(year,month,day,basin,list(),list(),list())
+        ## stash(year,month,day,basin,list(),list(),list())
 
     }
     return (returnval)

@@ -234,33 +234,53 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     if(! is.null(config$recheck)){
         incl.docs <- TRUE
     }
-    result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
-                                            keys=couch.test.docs,
-                                            include.docs=incl.docs,h=curlH)
-    rows <- result$rows
-    print(length(rows))
-    for(i in 1:length(rows)){
-        row <- rows[[i]]
-        ## print(row$key)
-        if('error' %in% names(row)){
+    if(length(couch.test.docs) == 1){
+        ## use get not alldocs
+        doc <- rcouchutils::couch.get(db=config$couchdb$grid_hpms,
+                                         docname=couch.test.docs)
+        if('error' %in% names(doc)){
             ## error means doc not found, need to do this grid
-            hpmstodo[i] <- TRUE
-            ## print(paste('todo',row$key,couch.test.docs[i]))
-            ##true means need to do this document
-        } else {
-            ## no error means there is a doc.  If config says to
-            ## recheck, check if there is a date
+            hpmstodo[1] <- TRUE
+        }else{
             if(! is.null(config$recheck)){
-                if(is.null(row$doc$modelversion)
-                   || row$doc$modelversion < config$recheck){
+                if(is.null(doc$modelversion)
+                   || doc$modelversion < config$recheck){
                     ## done but needs redoing
-                    hpmstodo[i] <- TRUE
+                    hpmstodo[1] <- TRUE
                 }
             }
         }
+        ##print(doc)
+        print(paste('checked',couch.test.date,'for 1 doc, missing',length(hpmstodo[hpmstodo])))
+    }else{
+        result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
+                                                 keys=couch.test.docs,
+                                                 include.docs=incl.docs,h=curlH)
 
+        rows <- result$rows
+        print(length(rows))
+        for(i in 1:length(rows)){
+            row <- rows[[i]]
+            ## print(row$key)
+            if('error' %in% names(row)){
+                ## error means doc not found, need to do this grid
+                hpmstodo[i] <- TRUE
+                ## print(paste('todo',row$key,couch.test.docs[i]))
+                ##true means need to do this document
+            } else {
+                ## no error means there is a doc.  If config says to
+                ## recheck, check if there is a date
+                if(! is.null(config$recheck)){
+                    if(is.null(row$doc$modelversion)
+                       || row$doc$modelversion < config$recheck){
+                        ## done but needs redoing
+                        hpmstodo[i] <- TRUE
+                    }
+                }
+            }
+        }
+        print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     }
-    print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     return (df.hpms.grid.locations[hpmstodo,])
 
 }

@@ -1,3 +1,12 @@
+# 2016-04-13
+
+I had an idea to run a model for all of california in order to pick up
+grid cells that are not modeled with others.
+
+Kinda crazy.
+
+
+
 # todo
 
 both detector and hpms data are in couchdb, and queryable.

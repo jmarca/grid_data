@@ -131,9 +131,10 @@ group.loop <- function(prediction.grid,var.models,ts.ts,ts.un,curlH){
         res <- rcouchutils::couch.bulk.docs.save(config$couchdb$grid_hpms,storedf,h=curlH)
 
         rm(storedf)
+
         doccount <- doccount + res
     }
-
+    rm(df.all.predictions)
     gc()
     ## print(paste('saved',doccount,'docs'))
     return ()
@@ -165,7 +166,7 @@ rearrange_data <- function(col.names){
             outpt[[col.names[numeric.cols[aadt.cols[i]]]]] <- NULL
             aadtlist[[col.names[numeric.cols[aadt.cols[i]]]]] <- row[[numeric.cols[aadt.cols[i]]]]
         }
-        outpt[['aadt']] <- aadtlist
+        outpt[['aadt_frac']] <- aadtlist
         ## print(outpt)
         return (outpt)
 
@@ -233,33 +234,53 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     if(! is.null(config$recheck)){
         incl.docs <- TRUE
     }
-    result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
-                                            keys=couch.test.docs,
-                                            include.docs=incl.docs,h=curlH)
-    rows <- result$rows
-    print(length(rows))
-    for(i in 1:length(rows)){
-        row <- rows[[i]]
-        ## print(row$key)
-        if('error' %in% names(row)){
+    if(length(couch.test.docs) == 1){
+        ## use get not alldocs
+        doc <- rcouchutils::couch.get(db=config$couchdb$grid_hpms,
+                                         docname=couch.test.docs)
+        if('error' %in% names(doc)){
             ## error means doc not found, need to do this grid
-            hpmstodo[i] <- TRUE
-            ## print(paste('todo',row$key,couch.test.docs[i]))
-            ##true means need to do this document
-        } else {
-            ## no error means there is a doc.  If config says to
-            ## recheck, check if there is a date
+            hpmstodo[1] <- TRUE
+        }else{
             if(! is.null(config$recheck)){
-                if(is.null(row$doc$modelversion)
-                   || row$doc$modelversion < config$recheck){
+                if(is.null(doc$modelversion)
+                   || doc$modelversion < config$recheck){
                     ## done but needs redoing
-                    hpmstodo[i] <- TRUE
+                    hpmstodo[1] <- TRUE
                 }
             }
         }
+        ##print(doc)
+        print(paste('checked',couch.test.date,'for 1 doc, missing',length(hpmstodo[hpmstodo])))
+    }else{
+        result <- rcouchutils::couch.allDocsPost(db=config$couchdb$grid_hpms,
+                                                 keys=couch.test.docs,
+                                                 include.docs=incl.docs,h=curlH)
 
+        rows <- result$rows
+        print(length(rows))
+        for(i in 1:length(rows)){
+            row <- rows[[i]]
+            ## print(row$key)
+            if('error' %in% names(row)){
+                ## error means doc not found, need to do this grid
+                hpmstodo[i] <- TRUE
+                ## print(paste('todo',row$key,couch.test.docs[i]))
+                ##true means need to do this document
+            } else {
+                ## no error means there is a doc.  If config says to
+                ## recheck, check if there is a date
+                if(! is.null(config$recheck)){
+                    if(is.null(row$doc$modelversion)
+                       || row$doc$modelversion < config$recheck){
+                        ## done but needs redoing
+                        hpmstodo[i] <- TRUE
+                    }
+                }
+            }
+        }
+        print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     }
-    print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
     return (df.hpms.grid.locations[hpmstodo,])
 
 }
@@ -355,6 +376,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     dolimit <-  50  # the higher this number, the more likely to run out of ram
 
+    # dolimit <- 200 # temporary hacking for all_california run
     if(length(picked)>dolimit){
         returnval <- length(picked) - dolimit
         ## just do 100 for now
@@ -369,9 +391,9 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     print(paste('processing',length(picked),'cells'))
 
 
-    num.cells = 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    num.cells = 250 # 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
-    ## print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
+    print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 
     runs.index <- rep_len(1:num.runs,length.out = length(picked))
 
@@ -425,51 +447,87 @@ model.fwy.data <- function(df.fwy.data){
 ##' @author James E. Marca
 processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
-                                year,month,day,
+                                year,month,day,basin,
                                 maxiter=2){
 
     iter <- 0
     curlH <- RCurl::getCurlHandle()
-    df.fwy.data <- get.raft.of.grids(df.fwy.grid
-                                    ,day=day
-                                    ,month=month
-                                    ,year=year)
-    hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
-    hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-    returnval <- 0
+
+    var.models <- list() # fetch.model(year,month,day,basin)
+    df.fwy.data <- fetch.fwy.data(year,month,day,basin)
+    hpms <- fetch.hpms(year,month,day,basin)
+
+    if(length(dim(hpms)) == 2 && length(hpms[,1])<1){
+        print(dim(hpms))
+
+        print(paste('not going to start, all done'))
+        ## rm(df.fwy.data)
+
+        return (0)
+    }
+
+    if(length(df.fwy.data) == 0){
+
+        df.fwy.data <- get.raft.of.grids(df.fwy.grid
+                                        ,day=day
+                                        ,month=month
+                                        ,year=year)
+        stash.fwy.data(year,month,day,basin,df.fwy.data)
+    }
+    if(length(dim(hpms)) == 0){
+
+        hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
+
+        hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+        stash.hpms(year,month,day,basin,hpms)
+
+
+    }
 
     if(length(hpms[,1])<1){
         print(paste('all done'))
         ## rm(df.fwy.data)
-        ## rm(curlH)
+
+        ## save empties to reduce space needs
+        stash.fwy.data(year,month,day,basin,list())
         return (0)
+    }else{
+        print(length(hpms[,1]))
     }
+
     if(length(unique(df.fwy.data$s.idx))<2){
-            ## one cell is not enough freeway grid cells to build a
-            ## spatial model.
-            ##
-            ## just assign fraction
+        ## one cell is not enough freeway grid cells to build a
+        ## spatial model.
+        ##
+        ## just assign fraction
         while(length(hpms[,1])>0){
             assign.fraction(df.fwy.data,hpms,year,curlH)
+
             hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+
+            stash.hpms(year,month,day,basin,hpms)
         }
     }else{
-        ## still here, only process 100
-
-        ## model, then predict
-        var.models <- model.fwy.data(df.fwy.data)
-            ## predict
-        while(length(hpms[,1])>0 && iter < maxiter){
-            returnval <- predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
-            hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-            iter <- iter + 1
+        ## still here, build model, then stash
+        if(length(var.models) == 0){
+            ## model, then predict
+            print('building models')
+            var.models <- model.fwy.data(df.fwy.data)
+            print('saving models')
+            ## stash.model(year,month,day,var.models)
+        }else{
+            print('using previously computed models')
         }
-    }
-    ## rm(df.fwy.data)
-    ## rm(curlH)
-    ## print(paste('end processing.sequence memory',pryr::mem_used()))
 
-    return(returnval)
+        ## predict
+
+        predict.hpms.data(df.fwy.data,hpms,var.models,year,curlH)
+        hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
+
+        stash.hpms(year,month,day,basin,hpms)
+    }
+    rm(curlH)
+    return(length(hpms[,1]))
 }
 
 ##' Process a month of data day by day
@@ -487,13 +545,14 @@ processing.sequence <- function(df.fwy.grid,
 ##' @param month the month to run this.
 ##' @return nothing at all
 ##' @author James E. Marca
-process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day,maxiter=2){
+process.data.by.day <- function(df.grid,df.hpms.grids,year,month,day,basin,maxiter=2){
     print (paste(year,month,day,pryr::mem_used()))
     ## don't care about true number of days per month
     returnval <- processing.sequence(df.grid,df.hpms.grids
                                     ,year=year
                                     ,month=month
                                     ,day=day
+                                    ,basin=basin
                                     ,maxiter)
 
     return (returnval)

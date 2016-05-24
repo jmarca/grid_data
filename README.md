@@ -27,11 +27,103 @@ tools.
 Feel free to poach any code you want from here, but doing so is
 probably stupid unless your name is James Marca.
 
+# Running this.
+
+The primary reason to run this is to process HPMS data.  Therefore,
+most likely you will jump to here and want to run things right away.
+
+## setup
+
+First, set up config.json properly.  It should look like.
+
+
+## Run the precaching program
+
+I have a precaching program that makes things go a little faster.  Run
+it first.
+
+```
+node lib/trigger_R_preload_calif.js --startmonth=1  --jobs 1 --year 2012  > calif_preload_2012.log 2>&1 &
+```
+
+This can be run at the same time as the modeling program, as the
+modeling programs very quickly get bogged down in modeling, while this
+program strictly loads things from postgresql and couchdb for the
+modeling runs.
+
+The precaching program will fill up a directory called "stash"
+underneath the root directory of this package. If you are short on
+space, you can create a symlink to a bigger drive prior to running
+this program.
+
+For 2012, a month of data in the stash directory takes up about 22MB,
+so a year of data should take up less than 300MB, although that number
+can rise in future years if more grid cells are covered by highway
+detector data and/or HPMS data.
+
+## Run the modeling program
+
+There are two options here.  First, you can run a model for each
+airbasin.  Second, you can run for all of California at once.
+At this point (mid-2016) I'm thinking it is best to just run the
+all-of-california version of the clustering and modeling run.
+
+What both programs do is to cluster the grid cells in the region with
+valid freeway data for the given day, associate HPMS-data grid cells,
+and then run the spatial-temporal modeling and predicting steps.
+
+If you run it on an airbasin boundary, then airbasins without highway
+detectors will not have any modeling done in them, and you'll have to
+run the all California model anyway.
+
+If you start with the all-California modeling step, rather than the
+per-airbasin step, then you will effectively end up with bigger
+clusters of grid cells, which will slow down the spatial-temporal
+modeling and predicting, but in the end the result is the same as the
+per-airbasin way needs more model runs.
+
+So, to run the all-of-California model/predict code, do the following
+(assuming that you have N CPUs on your machine and approximately 4GB
+available per CPU):
+
+```
+node lib/trigger_R_gridwork_calif.js --startmonth=1  --jobs N --year 2012  > calif2012.log 2>&1 &
+```
+
+Obviously, if N = 6, you put 6, not N.
+
+Also, note that you have to change the year from 2012 to whatever year
+you are processing.
+
+## Pre-run test runs
+
+If you want to run a shorter test prior to running the full blown
+modeling step, then you can tweak the code a little bit to do so.
+
+Open up './lib/trigger_R_gridwork_calif.js' in an editor, and scroll
+down to about line 129, to where you see the following lines of code:
+
+```
+// for debugging, do a few days only
+// endymd = new Date(year, startmonth, 3, 0, 0, 0)
+for( ymd = new Date(year, startmonth, 1, 0, 0, 0);
+```
+
+You should uncomment the `// endymd = new Date...` line.  What this
+does is set up the job to stop after just 2 days of processing.  It
+will only process startmonth day 1, and  startmonth day 2.  Then you
+can inspect the log files (look under the log/... directory) and make
+sure that the program is doing what you expect it to do.
+
+When everything looks good, don't forget to put back in the comment on
+the above line.
+
+
 # contents
 
 ## lib
 
-This is my node.js files
+This is where my node.js files live.
 
 ### trigger_R_gridwork.js
 

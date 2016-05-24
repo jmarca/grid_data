@@ -22,17 +22,20 @@ var path    = require('path')
 var rootdir = path.normalize(__dirname)
 var config_file = rootdir+'/../test.config.json'
 
-before(function(done){
-    config_okay(config_file,function(err,c){
-        if(err){
-            console.log('Problem trying to parse options in ',config_file)
-            throw new Error(err)
-        }
-        c.couchdb.db = test_db
-        config = c
-        utils.create_tempdb(config,done)
-        return null
-    })
+describe('couch_file',function(){
+
+
+    before(function(done){
+        config_okay(config_file,function(err,c){
+            if(err){
+                console.log('Problem trying to parse options in ',config_file)
+                throw new Error(err)
+            }
+            config.couchdb = Object.assign({},c.couchdb)
+            config.couchdb.db = test_db
+            utils.create_tempdb(config,done)
+            return null
+        })
         // options={'chost':c.couchdb.host
         //         ,'cport':c.couchdb.port
         //         ,'cusername':c.couchdb.auth.username
@@ -43,18 +46,15 @@ before(function(done){
         //         ,'username':c.postgres.auth.username
         //         ,'password':c.postgres.auth.password
         //      }
-    return null
-})
+        return null
+    })
 
-after(function(done){
-    // uncomment to bail in development
-    // return done()
-    utils.delete_tempdb(config,done)
-    return null
-})
-
-describe('couch_file',function(){
-
+    after(function(done){
+        // uncomment to bail in development
+        // return done()
+        utils.delete_tempdb(config,done)
+        return null
+    })
     it('should save something to couchdb'
       ,function(done){
            // var task={i0:140

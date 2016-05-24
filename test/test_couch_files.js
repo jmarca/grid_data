@@ -20,26 +20,7 @@ var config={}
 
 var utils=require('./utils.js')
 
-var testdb ='test%2fcarb%2fgrid%2fstate4k'
-
-before(function(done){
-    config_okay(config_file,function(err,c){
-        if(err){
-            console.log('Problem trying to parse options in ',config_file)
-            throw new Error(err)
-        }
-        c.couchdb.db = testdb
-        config = Object.assign(config,c)
-        utils.create_tempdb(config,done)
-        return null
-    })
-})
-after(function(done){
-    // uncomment to bail in development
-    // return done()
-    utils.delete_tempdb(config,done)
-    return null
-})
+var testdb ='test%2fcarb%2fgrid%2fstate4k_files'
 // var env = process.env;
 // var cuser = env.COUCHDB_USER ;
 // var cpass = env.COUCHDB_PASS ;
@@ -84,12 +65,11 @@ function aadtFile(task,cb){
 function create_couch_entries(task,done){
     couch_file(task
                ,function(err,couch_task){
-                   console.log('check result of saving to couchdb')
                    should.not.exist(err)
                    // check with couchdb, make sure that what you get is a topology
                    var couch ='http://'+
-                           [config.couchdb.host+':'+config.couchdb.port
-                            ,config.couchdb.db].join('/')
+                           [task.options.couchdb.host+':'+task.options.couchdb.port
+                            ,task.options.couchdb.db].join('/')
                    var uri1 = couch +'/header'
                    var uri2 = couch +'/_all_docs?'+['include_docs=true'
                                                     ,'startkey=%22'+[100,263,'2009-01-02%2012:00'].join('_')+'%22'
@@ -162,11 +142,10 @@ function create_couch_entries(task,done){
 function overwrite_couch_entries(task,origdocs,done){
     couch_file(task
                ,function(err,cbtask){
-                   console.log('check result of overwriting to couchdb')
                    should.not.exist(err)
                    var couch ='http://'+
-                           [config.couchdb.host+':'+config.couchdb.port
-                            ,config.couchdb.db].join('/')
+                           [task.options.couchdb.host+':'+task.options.couchdb.port
+                            ,task.options.couchdb.db].join('/')
 
                    var uri2 = couch +'/_all_docs?'+['include_docs=false'
                                                     ,'startkey=%22'+[100,263,'2009-01-02%2012:00'].join('_')+'%22'
@@ -196,6 +175,27 @@ function overwrite_couch_entries(task,origdocs,done){
 
 
 describe('couch_file',function(){
+
+
+    before(function(done){
+
+        config_okay(config_file,function(err,c){
+            if(err){
+                console.log('Problem trying to parse options in ',config_file)
+                throw new Error(err)
+            }
+            config.couchdb = Object.assign({},c.couchdb)
+            config.couchdb.db = testdb
+            utils.create_tempdb(config,done)
+            return null
+        })
+    })
+    after(function(done){
+        // uncomment to bail in development
+        // return done()
+        utils.delete_tempdb(config,done)
+        return null
+    })
 
     it('should write and overwrite couchdb entries'
        ,function(done){

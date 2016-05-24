@@ -17,7 +17,7 @@ var config={}
 
 var utils=require('./utils.js')
 
-var testdb ='test%2fcarb%2fgrid%2fstate4k'
+var testdb ='test%2fcarb%2fgrid%2fstate4k_blablahblah'
 var docs = {'docs':[{'_id':'118_192_2012-01-01 02:00'
                     ,foo:'bar'}
                    ,{'_id':'118_192_2012-01-01 03:00'
@@ -35,8 +35,8 @@ before(function(done){
             console.log('Problem trying to parse options in ',config_file)
             throw new Error(err)
         }
-        c.couchdb.db = testdb
-        config = c
+        config.couchdb = Object.assign({},c.couchdb)
+        config.couchdb.db = testdb
         utils.create_tempdb(config,function(e,r){
             // put docs to be cleared
             var cdb = config.couchdb.host+':'
@@ -93,7 +93,7 @@ describe('can set delete on docs',function(){
                }
                // console.log(cdb)
                should.exist(e)
-               e.should.eql('no data')
+               e.message.should.eql('no data')
                return request.get(cdb+'/_all_docs?include_docs=true'
                               ,function(e,r,b){
                                    if(e) return done(e)

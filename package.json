@@ -14,6 +14,7 @@
     "configr": "jmarca/configr",
     "couch_check_state": "jmarca/couch_check_state",
     "couchdb_bulkdoc_saver": "jmarca/couchdb_bulkdoc_saver",
+    "couchdb_get_views": "github:jmarca/couchdb_get_views",
     "d3-queue": "",
     "glob": "^7.0.3",
     "lodash": "",

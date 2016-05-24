@@ -92,7 +92,8 @@ describe('can set delete on docs',function(){
                    cdb = 'http://'+cdb
                }
                // console.log(cdb)
-               should.not.exist(e)
+               should.exist(e)
+               e.should.eql('no data')
                return request.get(cdb+'/_all_docs?include_docs=true'
                               ,function(e,r,b){
                                    if(e) return done(e)

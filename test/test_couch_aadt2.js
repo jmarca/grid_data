@@ -18,7 +18,7 @@ var config={}
 
 var utils=require('./utils.js')
 
-var testdb ='test%2fcarb%2fgrid%2fstate4k'
+var testdb ='test%2fcarb%2fgrid%2fstate4k_aadt'
 
 before(function(done){
     config_okay(config_file,function(err,c){
@@ -26,8 +26,9 @@ before(function(done){
             console.log('Problem trying to parse options in ',config_file)
             throw new Error(err)
         }
-        c.couchdb.db = testdb
-        config = c
+        config.couchdb = Object.assign({},c.couchdb)
+        config.couchdb.db = testdb
+        config.postgresql = Object.assign({},c.postgresql)
         utils.create_tempdb(config,done)
         return null
     })

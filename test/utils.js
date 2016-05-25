@@ -9,6 +9,8 @@ function create_tempdb(config,done){
                           date.getMinutes(),
                           date.getSeconds(),
                           date.getMilliseconds()].join('-')
+    config.couchdb.db = test_db
+    // console.log(config.couchdb)
     cdb =
         [config.couchdb.host+':'+config.couchdb.port
          ,test_db].join('/')
@@ -27,7 +29,6 @@ function create_tempdb(config,done){
         if (e){
             throw new Error(e)
         }
-        config.couchdb.db = test_db
         if(r.statusCode == 200) {
             // do something here?
         }
@@ -44,6 +45,7 @@ function delete_tempdb (config,done){
     if(! /http/.test(cdb)){
         cdb = 'http://'+cdb
     }
+    console.log('deleting ',cdb)
     options = {
         'url':cdb,
         'method':'DELETE',

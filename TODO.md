@@ -1,3 +1,9 @@
+# 2016-07-28
+
+1. get rid of async usage in tests
+2. edit README
+3. make sure all tests run out of the box
+
 # 2016-04-13
 
 I had an idea to run a model for all of california in order to pick up

@@ -23,7 +23,7 @@ describe('find files',function(){
                                   results.sort(function(a,b){
                                       return a.file < b.file ? -1 : 1
                                   })
-                                  results.length.should.eql(3)
+                                  results.length.should.eql(4)
                                   results[0].should.eql({
                                       file:rootdir+'/test/files/hourly/2009/100/263.json'
                                       ,year:2009
@@ -49,6 +49,15 @@ describe('find files',function(){
                                       ,grid:{'i_cell':231,'j_cell':55}
                                       ,i:231
                                       ,j:55
+                                      ,options:{'couchdb':'blahblah'}
+                                  })
+
+                                  results[3].should.eql({
+                                      file:rootdir+'/test/files/hourly/2012/300/250.json'
+                                      ,year:2012
+                                      ,grid:{'i_cell':300,'j_cell':250}
+                                      ,i:300
+                                      ,j:250
                                       ,options:{'couchdb':'blahblah'}
                                   })
 

@@ -5,6 +5,10 @@
 3. make sure all tests run out of the box
     1. grid topology fails
     2. pop files fails, 4 is not 3
+4. make R install its dependencies with an RInstall.R function and
+   command
+
+
 # 2016-04-13
 
 I had an idea to run a model for all of california in order to pick up

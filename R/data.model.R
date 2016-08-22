@@ -463,7 +463,9 @@ processing.sequence <- function(df.fwy.grid,
         print(paste('not going to start, all done'))
         ## rm(df.fwy.data)
 
-        return (0)
+        ## in order to signal the caller that we're already done and
+        ## did no work at all, set the return state to -1, not zero
+        return (-1)
     }
 
     if(length(df.fwy.data) == 0){
@@ -490,7 +492,9 @@ processing.sequence <- function(df.fwy.grid,
 
         ## save empties to reduce space needs
         stash.fwy.data(year,month,day,basin,list())
-        return (0)
+        ## in order to signal the caller that we're already done and
+        ## did no work at all, set the return state to -1, not zero
+        return (-1)
     }else{
         print(length(hpms[,1]))
     }

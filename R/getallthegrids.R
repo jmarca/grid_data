@@ -327,7 +327,21 @@ runme <- function(){
                                             ,basin=paste(basin,cl.i,numclust,sep='_')
                                             ,maxiter=maxiter)
         returnval <- max(returnval,somereturnval )
+        ## add a break statement here.  The california-wide modeling
+        ## runs have very large clusters, so running multiple clusters
+        ## per R job results in a *lot* of leaked RAM.  So break if
+        ## there something productive was done here
+        if(returnval >=  0){
+            break()
+        }
     }
+    if(returnval < 0){
+        ## that means every iteration above returned "already
+        ## done". but I don't want to return -1 to the caller, because
+        ## that would be misunderstood.
+        returnval <- 0
+    }
+
     if(returnval == 0){
         ## save dummies to FS to reduce space
         ## stash(year,month,day,basin,list(),list(),list())

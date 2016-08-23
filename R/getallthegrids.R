@@ -279,7 +279,8 @@ runme <- function(){
 
         ## want clusters of about 20
         numclust <- ceiling(dim(df.grid.data)[1] / 20)
-        if(numclust > 10) numclust = 10
+		print(paste('numclust before adjust is ',numclust,'num grid cells is',nrow(df.grid.data)))
+        if(numclust > 50) numclust = 50
         print(paste('numclust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         cl <- NULL
         if(numclust > 1){

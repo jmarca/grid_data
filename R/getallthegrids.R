@@ -332,6 +332,7 @@ runme <- function(){
         ## per R job results in a *lot* of leaked RAM.  So break if
         ## there something productive was done here
         if(returnval >=  0){
+            returnval <- 1 ## did something, quitting.  force a revisit to this date
             break()
         }
     }

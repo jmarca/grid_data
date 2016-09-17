@@ -310,7 +310,7 @@ runme <- function(){
     ## first make sure that the clusters are not too big.  if so, catch next pas
     numclust <- max(df.hpms.grids$cluster)
 
-    returnval <- 0
+    returnval <- -1
     maxiter <- max(1,ceiling(10/numclust))
                                         # temporary hacking for all_california run
     maxiter <- 1

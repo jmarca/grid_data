@@ -83,7 +83,7 @@ load.grids.with.hpms <- function(basin,year){
     }
     if(nrow(df.grid) == 0){
         df.grid <- NULL
-        if(year > 2010 && year <=  2014){
+        if(year > 2010 && year <=  2015){
             df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_2014_table)
         }else{
             df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_table)
@@ -279,6 +279,7 @@ runme <- function(){
 
         ## want clusters of about 20
         numclust <- ceiling(dim(df.grid.data)[1] / 20)
+		print(paste('numclust before adjust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         if(numclust > 10) numclust = 10
         print(paste('numclust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         cl <- NULL
@@ -310,7 +311,7 @@ runme <- function(){
     ## first make sure that the clusters are not too big.  if so, catch next pas
     numclust <- max(df.hpms.grids$cluster)
 
-    returnval <- -1
+    returnval <- -2
     maxiter <- max(1,ceiling(10/numclust))
                                         # temporary hacking for all_california run
     maxiter <- 1
@@ -336,6 +337,11 @@ runme <- function(){
             break()
         }
     }
+	if(returnval == 0){
+        ## save dummies to FS to reduce space
+        ## stash(year,month,day,basin,list(),list(),list())
+     returnval <- 10
+    }
     if(returnval < 0){
         ## that means every iteration above returned "already
         ## done". but I don't want to return -1 to the caller, because
@@ -343,10 +349,6 @@ runme <- function(){
         returnval <- 0
     }
 
-    if(returnval == 0){
-        ## save dummies to FS to reduce space
-        ## stash(year,month,day,basin,list(),list(),list())
 
-    }
     return (returnval)
 }

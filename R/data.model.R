@@ -374,7 +374,7 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     returnval <- 0
 
-    dolimit <-  50  # the higher this number, the more likely to run out of ram
+    dolimit <-  100  # the higher this number, the more likely to run out of ram
 
     # dolimit <- 200 # temporary hacking for all_california run
     if(length(picked)>dolimit){

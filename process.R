@@ -41,6 +41,8 @@ spatialvds.con <-  dbConnect(m
 
 ## do it
 
+print(paste ('config$couchdb is ',config$couchdb))
+
 process.result <- runme()
 print(paste('done, quitting with',process.result))
 if(process.result>1) process.result <- 10

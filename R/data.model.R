@@ -219,7 +219,7 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     if(checkmonth < 10) checkmonth <- paste('0',checkmonth,sep='')
     ## form date part of checking URL for couchdb
 
-    couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"00:00",sep=' ')
+    couch.test.date <- paste(paste(year,checkmonth,checkday,sep='-'),"23:00",sep=' ')
     ## note just checking a single date, the zero hour of the day.  If
     ## not there, assume whole day is missing.  If there, assume whole
     ## day is there too.

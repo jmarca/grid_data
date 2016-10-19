@@ -148,38 +148,6 @@ load.grids.with.hwy <- function(basin,year){
     return(df.grid)
 }
 
-##' Pick off HPMS grids inside the effective "range" of detector grids
-##'
-##' basically just expands the grids by one in each direction, such
-##' that you are pulling into the modeling run just the surrounding
-##' hpms grids.  if you want more grids, expand the expand parameter,
-##' say to 2 for two squares away.
-##'
-##' @title get.hpms.in.range
-##' @param df.hpms.grids the hpms grids
-##' @param df.grid the grids used for the next model run
-##' @param expand an integer number of squares to expand;  default 1
-##' @return a binary true false filter index, which is true if an hpms
-##'     grid cell falls inside of 'expand' cells away from a df.grid
-##'     cell, false otherwise.
-##' @author James E. Marca
-get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
-
-    ## assume without proof that a cell can influence at least a few grid cells on either side.
-    ## 4 km square, conservative guess is one square left right up down
-    ## make it more with bigger value to expand parameter
-
-    icell.min <- min(df.grid$i_cell) - expand
-    icell.max <- max(df.grid$i_cell) + expand
-    jcell.min <- min(df.grid$j_cell) - expand
-    jcell.max <- max(df.grid$j_cell) + expand
-    ## return value:
-        df.hpms.grids$i_cell >= icell.min &
-        df.hpms.grids$i_cell <= icell.max &
-        df.hpms.grids$j_cell >= jcell.min &
-        df.hpms.grids$j_cell <= jcell.max
-}
-
 ##' Compute the manhattan distance between two lat, lon points
 ##'
 ##' @title compute.manhattan.distance

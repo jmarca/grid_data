@@ -293,7 +293,7 @@ load.grid.data.from.couchdb <- function(uniquestr,basin,year){
     exists.file <- dir(path=paste(dot_is,'data',sep='/'),pattern=varnames[1])
     ## print(exists.file)
     if(length(exists.file) == 0){
-        save(barfl,file=file.path,compress='xz')
+        save(barfl,file=file.path,compress=FALSE)
     }
     return(barfl)
 }
@@ -383,13 +383,13 @@ stash <- function(year,month,day,basin,cl,df.hpms.grids,df.grid.data){
 
     save(cl,
          file=paste(savepath,'/cl.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
     save(df.hpms.grids,
          file=paste(savepath,'/df.hpms.grids.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
     save(df.grid.data,
          file=paste(savepath,'/df.grid.data.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
 
     return (1)
 }
@@ -451,24 +451,24 @@ makepath <- function(year,month,day,basin){
     return(savepath)
 }
 
-##' Call this to save the models
-##'
-##' @title stash.model
-##' @param year the year
-##' @param month the month
-##' @param day the day
-##' @param basin the airbasin
-##' @param models the models list
-##' @return 1
-##' @author James E. Marca
-stash.model <- function(year,month,day,basin,models){
+## ##' Call this to save the models
+## ##'
+## ##' @title stash.model
+## ##' @param year the year
+## ##' @param month the month
+## ##' @param day the day
+## ##' @param basin the airbasin
+## ##' @param models the models list
+## ##' @return 1
+## ##' @author James E. Marca
+## stash.model <- function(year,month,day,basin,models){
 
-    savepath <- makepath(year,month,day,basin)
-    save(models,
-         file=paste(savepath,'/models.RData',sep=''),
-         compress='xz')
-    return (1)
-}
+##     savepath <- makepath(year,month,day,basin)
+##     save(models,
+##          file=paste(savepath,'/models.RData',sep=''),
+##          compress=FALSE)
+##     return (1)
+## }
 
 ##' Call this to fetch the models
 ##'
@@ -509,7 +509,7 @@ stash.fwy.data <- function(year,month,day,basin,fwy.data){
     savepath <- makepath(year,month,day,basin)
     save(fwy.data,
          file=paste(savepath,'/fwy.data.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
     return (1)
 }
 
@@ -538,6 +538,10 @@ fetch.fwy.data <- function(year,month,day,basin){
 
 ##' Call this to save the hpms
 ##'
+##' The HPMS grid data is stashed to the file system using this
+##' function.  The reson to do this is to speed up the re-loading of
+##' data in between model runs.  Load the data back up by calling fetch.hpms.
+##'
 ##' @title stash.hpms
 ##' @param year the year
 ##' @param month the month
@@ -551,11 +555,16 @@ stash.hpms <- function(year,month,day,basin,hpms){
     savepath <- makepath(year,month,day,basin)
     save(hpms,
          file=paste(savepath,'/hpms.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
     return (1)
 }
 
 ##' Call this to fetch the hpms
+##'
+##' The HPMS grid data is stashed in the file system (using the above
+##' stash.hpms function) so that it can be quickly restored in the
+##' next model iteration.  If there is an issue with the HPMS data
+##' stash, you have to delete it from the file system.
 ##'
 ##' @title fetch.hpms
 ##' @param year the year

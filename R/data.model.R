@@ -236,7 +236,6 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
     }
     if(length(couch.test.docs) == 1){
         ## use get not alldocs
-        print ( paste ('checking contents of',config$couchdb$grid_hpms
         doc <- rcouchutils::couch.get(db=config$couchdb$grid_hpms,
                                          docname=couch.test.docs)
         if('error' %in% names(doc)){

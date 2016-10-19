@@ -192,7 +192,7 @@ no.overlap <- function(df.fwy.data,df.hpms.grid.locations){
 ##'
 ##' This routine will run the hpms grids at the database and determine
 ##' which ones need to be processed still.  No point duplicating
-##' effort.  Any grid with midnight on the current day in the DB does
+##' effort.  Any grid with 23:00 on the current day in the DB does
 ##' not need doing for the day.  Any grid cell without midnight stored
 ##' in the DB is assumed to need processing.
 ##'
@@ -450,14 +450,29 @@ processing.sequence <- function(df.fwy.grid,
                                 df.hpms.grid.locations,
                                 year,month,day,basin,
                                 maxiter=2){
-
     iter <- 0
     curlH <- RCurl::getCurlHandle()
 
-    var.models <- list() # fetch.model(year,month,day,basin)
+    var.models <- list() ## empty list
+    ## note that at one time I tried to do:
+    ## fetch.model(year,month,day,basin)
+    ## but that fails.  spTimer has a memory leak
+    ## that translates also to saving it to disk.  Never save it to disk.
+
+    ## load stored freeway grid data
     df.fwy.data <- fetch.fwy.data(year,month,day,basin)
+
+    ## load stored hpms grid data
     hpms <- fetch.hpms(year,month,day,basin)
 
+    ## loaded fwy data grids and hpms grids from cached values it is
+    ## possible that they are empty, say if this is the first run of
+    ## the model.
+
+    ## in this first check, if hpms has non-empty dimension, then it
+    ## has been saved and has been restored from the filesystem, so
+    ## the task is just to check if the length is long enough to do
+    ## something
     if(length(dim(hpms)) == 2 && length(hpms[,1])<1){
         print(dim(hpms))
 
@@ -468,22 +483,44 @@ processing.sequence <- function(df.fwy.grid,
         ## did no work at all, set the return state to -1, not zero
         return (-1)
     }
+    ## if still here, then hpms is either empty, or it is populated
+    ## with real data and with non zero length
 
+
+    ## the next check.  if fwy data is zero length, then go get it as
+    ## the file system cache is empty
     if(length(df.fwy.data) == 0){
-
+        print('first pass, getting freeway grid data')
         df.fwy.data <- get.raft.of.grids(df.fwy.grid
                                         ,day=day
                                         ,month=month
                                         ,year=year)
+
+        ## stash that data for the next run of the model.
         stash.fwy.data(year,month,day,basin,df.fwy.data)
     }
-    if(length(dim(hpms)) == 0){
 
+    ## At this point, fwy data should be non-empty, so assert that
+    stopifnot(length(df.fwy.data) > 0)
+
+
+    ## okay, if we're here still then going well, and we are assured
+    ## that df.fwy.data is not empty.
+
+    ## now check hpms.  if length of dim() is zero, then no data yet
+    if(length(dim(hpms)) == 0){
+        print('first pass, getting hpms grid data')
+
+        ## so go get it.
+
+        ## first, drop overlapping grids
         hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
 
+        ## then check couchdb for necessary grids to populate
         hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-        stash.hpms(year,month,day,basin,hpms)
 
+        ## then stash them away for the next pass.
+        stash.hpms(year,month,day,basin,hpms)
 
     }
 

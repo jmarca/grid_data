@@ -451,24 +451,24 @@ makepath <- function(year,month,day,basin){
     return(savepath)
 }
 
-##' Call this to save the models
-##'
-##' @title stash.model
-##' @param year the year
-##' @param month the month
-##' @param day the day
-##' @param basin the airbasin
-##' @param models the models list
-##' @return 1
-##' @author James E. Marca
-stash.model <- function(year,month,day,basin,models){
+## ##' Call this to save the models
+## ##'
+## ##' @title stash.model
+## ##' @param year the year
+## ##' @param month the month
+## ##' @param day the day
+## ##' @param basin the airbasin
+## ##' @param models the models list
+## ##' @return 1
+## ##' @author James E. Marca
+## stash.model <- function(year,month,day,basin,models){
 
-    savepath <- makepath(year,month,day,basin)
-    save(models,
-         file=paste(savepath,'/models.RData',sep=''),
-         compress=FALSE)
-    return (1)
-}
+##     savepath <- makepath(year,month,day,basin)
+##     save(models,
+##          file=paste(savepath,'/models.RData',sep=''),
+##          compress=FALSE)
+##     return (1)
+## }
 
 ##' Call this to fetch the models
 ##'

@@ -518,8 +518,6 @@ processing.sequence <- function(df.fwy.grid,
             ## model, then predict
             print('building models')
             var.models <- model.fwy.data(df.fwy.data)
-            print('saving models')
-            ## stash.model(year,month,day,var.models)
         }else{
             print('using previously computed models')
         }

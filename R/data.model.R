@@ -258,29 +258,45 @@ necessary.grids <- function(df.fwy.data,df.hpms.grid.locations,year,curlH){
                                                  keys=couch.test.docs,
                                                  include.docs=incl.docs,h=curlH)
 
-        rows <- result$rows
-        print(length(rows))
-        for(i in 1:length(rows)){
-            row <- rows[[i]]
-            ## print(row$key)
-            if('error' %in% names(row)){
-                ## error means doc not found, need to do this grid
-                hpmstodo[i] <- TRUE
-                ## print(paste('todo',row$key,couch.test.docs[i]))
-                ##true means need to do this document
-            } else {
-                ## no error means there is a doc.  If config says to
-                ## recheck, check if there is a date
-                if(! is.null(config$recheck)){
-                    if(is.null(row$doc$modelversion)
-                       || row$doc$modelversion < config$recheck){
-                        ## done but needs redoing
-                        hpmstodo[i] <- TRUE
+        if('error' %in% names(result)){
+            ## error means doc not found, need to do this grid
+
+            hpmstodo <- rep(TRUE,length(hpmstodo))
+
+            ## maybe need to create the database?
+            if(result$reason == "no_db_file"){
+                reslt <- rcouchutils::couch.makedb(config$couchdb$grid_hpms)
+                print(reslt)
+                if('error' %in% names(reslt)){
+                    ## error is bad
+                    stop("error making database")
+                }
+            }
+        }else{
+            rows <- result$rows
+            print(length(rows))
+            for(i in 1:length(rows)){
+                row <- rows[[i]]
+                ## print(row$key)
+                if('error' %in% names(row)){
+                    ## error means doc not found, need to do this grid
+                    hpmstodo[i] <- TRUE
+                    ## print(paste('todo',row$key,couch.test.docs[i]))
+                    ##true means need to do this document
+                } else {
+                    ## no error means there is a doc.  If config says to
+                    ## recheck, check if there is a date
+                    if(! is.null(config$recheck)){
+                        if(is.null(row$doc$modelversion)
+                           || row$doc$modelversion < config$recheck){
+                            ## done but needs redoing
+                            hpmstodo[i] <- TRUE
+                        }
                     }
                 }
             }
         }
-        print(paste('checked',couch.test.date,'for',length(rows),'rows, missing',length(hpmstodo[hpmstodo])))
+        print(paste('checked',couch.test.date,'for',length(hpmstodo),'rows, missing',length(hpmstodo[hpmstodo])))
     }
     return (df.hpms.grid.locations[hpmstodo,])
 

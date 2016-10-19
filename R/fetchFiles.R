@@ -538,6 +538,10 @@ fetch.fwy.data <- function(year,month,day,basin){
 
 ##' Call this to save the hpms
 ##'
+##' The HPMS grid data is stashed to the file system using this
+##' function.  The reson to do this is to speed up the re-loading of
+##' data in between model runs.  Load the data back up by calling fetch.hpms.
+##'
 ##' @title stash.hpms
 ##' @param year the year
 ##' @param month the month
@@ -551,11 +555,16 @@ stash.hpms <- function(year,month,day,basin,hpms){
     savepath <- makepath(year,month,day,basin)
     save(hpms,
          file=paste(savepath,'/hpms.RData',sep=''),
-         compress='xz')
+         compress=FALSE)
     return (1)
 }
 
 ##' Call this to fetch the hpms
+##'
+##' The HPMS grid data is stashed in the file system (using the above
+##' stash.hpms function) so that it can be quickly restored in the
+##' next model iteration.  If there is an issue with the HPMS data
+##' stash, you have to delete it from the file system.
 ##'
 ##' @title fetch.hpms
 ##' @param year the year

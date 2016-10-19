@@ -83,7 +83,7 @@ load.grids.with.hpms <- function(basin,year){
     }
     if(nrow(df.grid) == 0){
         df.grid <- NULL
-        if(year > 2010 && year <=  2014){
+        if(year > 2010 && year <=  2015){
             df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_2014_table)
         }else{
             df.grid <- get.grids.with.hpms(basin,config$postgresql$hpms_table)
@@ -146,38 +146,6 @@ load.grids.with.hwy <- function(basin,year){
         ## print(res)
     }
     return(df.grid)
-}
-
-##' Pick off HPMS grids inside the effective "range" of detector grids
-##'
-##' basically just expands the grids by one in each direction, such
-##' that you are pulling into the modeling run just the surrounding
-##' hpms grids.  if you want more grids, expand the expand parameter,
-##' say to 2 for two squares away.
-##'
-##' @title get.hpms.in.range
-##' @param df.hpms.grids the hpms grids
-##' @param df.grid the grids used for the next model run
-##' @param expand an integer number of squares to expand;  default 1
-##' @return a binary true false filter index, which is true if an hpms
-##'     grid cell falls inside of 'expand' cells away from a df.grid
-##'     cell, false otherwise.
-##' @author James E. Marca
-get.hpms.in.range <- function(df.hpms.grids,df.grid,expand=1){
-
-    ## assume without proof that a cell can influence at least a few grid cells on either side.
-    ## 4 km square, conservative guess is one square left right up down
-    ## make it more with bigger value to expand parameter
-
-    icell.min <- min(df.grid$i_cell) - expand
-    icell.max <- max(df.grid$i_cell) + expand
-    jcell.min <- min(df.grid$j_cell) - expand
-    jcell.max <- max(df.grid$j_cell) + expand
-    ## return value:
-        df.hpms.grids$i_cell >= icell.min &
-        df.hpms.grids$i_cell <= icell.max &
-        df.hpms.grids$j_cell >= jcell.min &
-        df.hpms.grids$j_cell <= jcell.max
 }
 
 ##' Compute the manhattan distance between two lat, lon points
@@ -279,6 +247,7 @@ runme <- function(){
 
         ## want clusters of about 20
         numclust <- ceiling(dim(df.grid.data)[1] / 20)
+		print(paste('numclust before adjust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         if(numclust > 10) numclust = 10
         print(paste('numclust is ',numclust,'num grid cells is',nrow(df.grid.data)))
         cl <- NULL
@@ -310,7 +279,7 @@ runme <- function(){
     ## first make sure that the clusters are not too big.  if so, catch next pas
     numclust <- max(df.hpms.grids$cluster)
 
-    returnval <- -1
+    returnval <- -2
     maxiter <- max(1,ceiling(10/numclust))
                                         # temporary hacking for all_california run
     maxiter <- 1
@@ -336,6 +305,11 @@ runme <- function(){
             break()
         }
     }
+	if(returnval == 0){
+        ## save dummies to FS to reduce space
+        ## stash(year,month,day,basin,list(),list(),list())
+     returnval <- 10
+    }
     if(returnval < 0){
         ## that means every iteration above returned "already
         ## done". but I don't want to return -1 to the caller, because
@@ -343,10 +317,6 @@ runme <- function(){
         returnval <- 0
     }
 
-    if(returnval == 0){
-        ## save dummies to FS to reduce space
-        ## stash(year,month,day,basin,list(),list(),list())
 
-    }
     return (returnval)
 }

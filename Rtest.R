@@ -8,6 +8,8 @@ path <- normalizePath(node_paths, winslash = "/", mustWork = FALSE)
 lib_paths <- .libPaths()
 .libPaths(c(path, lib_paths))
 
+devtools::install_deps()
+
 ## need env for test file
 Sys.setenv(TEST_CONFIG=paste(dot_is,'test.config.json',sep='/'))
 config <- rcouchutils::get.config(Sys.getenv('TEST_CONFIG'))

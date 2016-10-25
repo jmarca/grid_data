@@ -55,7 +55,7 @@ data.predict.generator <- function(df.pred.grid,ts.un){
     grid.coords<-as.matrix(unique(cbind(df.mrg$Longitude,df.mrg$Latitude)))
     return (function(model){
         ## gc()
-        print(grid.coords)
+        ## print(grid.coords)
         spTimer::predict.spT(model,newcoords=grid.coords,newdata=df.mrg,tol.dist=0.005,distance.method="geodetic:km")
     })
 }
@@ -390,8 +390,15 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
     if(length(picked)>1)    picked = sample(picked)
 
     returnval <- 0
+    dolimit <-  150 # the higher this number, the more likely to run out of ram
+    maxaddl <-  floor(dolimit/3)
+    remainder <- length(picked) %% dolimit
 
-    dolimit <-  100  # the higher this number, the more likely to run out of ram
+    if(remainder > maxaddl && length(picked) > dolimit ){
+        remainder <- maxaddl
+    }
+
+    dolimit <- dolimit + remainder
 
     # dolimit <- 200 # temporary hacking for all_california run
     if(length(picked)>dolimit){
@@ -407,8 +414,8 @@ predict.hpms.data <- function(df.fwy.data,df.hpms.grid.locations,var.models,year
 
     print(paste('processing',length(picked),'cells'))
 
-
-    num.cells = 250 # 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
+    ## this numcells hack is dumb, so set to 500 so that it is skipped
+    num.cells = 500 # 100 ## 90 # min( 90, ceiling(80 * 11000 / length(batch.idx)))
     num.runs = ceiling(length(picked)/num.cells) ## manage RAM
     print(paste('num.runs is',num.runs,'which means number cells per run is about',floor(length(picked)/num.runs)))
 

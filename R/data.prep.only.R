@@ -46,7 +46,9 @@ preloading.sequence <- function(df.fwy.grid,
         hpms <- no.overlap(df.fwy.data,df.hpms.grid.locations)
 
         hpms <- necessary.grids(df.fwy.data,hpms,year,curlH)
-        stash.hpms(year,month,day,basin,hpms)
+
+        ## actually, I don't want to do this here
+        ## stash.hpms(year,month,day,basin,hpms)
 
 
     }

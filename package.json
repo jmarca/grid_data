@@ -9,6 +9,7 @@
   "dependencies": {
     "calvad_areas": "jmarca/calvad_areas",
     "calvad_compute_aadt": "jmarca/calvad_compute_aadt",
+    "calvad_hpms_new_table": "github:jmarca/calvad_hpms_new_table",
     "calvad_rscripts": "jmarca/calvad_rscripts",
     "config_okay": "",
     "configr": "jmarca/configr",

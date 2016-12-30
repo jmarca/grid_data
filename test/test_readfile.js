@@ -39,7 +39,7 @@ describe('read_file',function(){
                               done()
                           })
             })
-    it('should read a file that exists but has no features, and return an error task'
+    it('should read a file that exists but has no features, and return an empty data element'
            ,function(done){
                 var task={file:'./test/files/hourly/2007/300/250.json'}
 
@@ -47,9 +47,10 @@ describe('read_file',function(){
                          ,function(err,cbtask){
                               // file should not exist
                               // file should not exist
-                              should.exist(err)
-                              should.not.exist(cbtask)
-                              err.should.eql(task)
+                             should.not.exist(err)
+                             should.exist(cbtask)
+                             cbtask.should.have.property('data')
+                             cbtask.data.should.eql({'features':[{'properties':{'data':[]}}]})
                               done()
                           })
             })

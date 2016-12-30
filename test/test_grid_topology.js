@@ -34,6 +34,7 @@ describe('couch_file',function(){
             config.couchdb = Object.assign({},c.couchdb)
             config.couchdb.db = test_db
             utils.create_tempdb(config,done)
+            config.postgresql = Object.assign({},c.postgresql)
             return null
         })
         // options={'chost':c.couchdb.host

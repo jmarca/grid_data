@@ -45,11 +45,8 @@ to use the grid as a basis for generating estimates of mobile source
 emissions.
 
 This package contains code I use to manipulate the CARB grid data.
-Specifically, the main purpose right now is to load up data per grid and
-then copy into CouchDB.
-
-The original grid information is saved under the geometry subdirectory.
-This GIS file was read into PostgreSQL using PostGIS tools.
+Essentially, the job is to model hourly changes across the grid, based
+on observed changes in grids that have highway links (and hourly data).
 
 Feel free to poach any code you want from here, but doing so is probably
 stupid unless your name is James Marca.
@@ -57,13 +54,72 @@ stupid unless your name is James Marca.
 Running this.
 =============
 
-The primary reason to run this is to process HPMS data. Therefore, most
-likely you will jump to here and want to run things right away.
+
 
 setup
 -----
 
 First, set up config.json properly. It should look like.
+
+```
+{
+    "couchdb": {
+        "host": "myhost.com",
+        "port":5984,
+        "db": "vdsdata%2fskimmed",
+        "auth":{"username":"cdbuser",
+                "password":"mysegreded passzwrd""
+               },
+        "dbname":"vdsdata",
+        "trackingdb":"vdsdata%2ftracking",
+        "grid_detectors": "carb%2fgrid%2fstate4k",
+        "grid_hpms": "carb%2Fgrid%2Fstate4k%2fhpms%2f2015"
+    },
+    "postgresql": {
+        "host": "127.0.0.1",
+        "port":5432,
+        "db": "hpmstest",
+        "auth":{"username":"pguser"
+               }
+    },
+    "recheck":1
+}
+```
+
+## Clean up after old runs
+
+If you are re-running the code after a previous run, it is important
+to delete any files that are left over.  To do that, it is safest to
+look under "data" and "stash" directories, and delete the year that
+you are about to redo.  For example, for 2015 the file trees look like
+
+```
+data
+  -- California.hwy.2015.RData
+  -- California.hpms.2015.RData
+stash
+  -- 2014
+    -- ..
+  -- 2015
+    -- ..
+```
+
+So to delete the 2015 files, you would run:
+
+```
+rm data/*2015.RData
+rm -rf stash/2015
+```
+
+In addition, be sure to set the configuration file value "recheck" to
+be numerically greater than any previous value.  Otherwise, the
+program will go to couchdb, load up the grid square, see that it
+already has a model version of (say) 1.0, and decide not to redo the
+grid square.  Alternately, you can just delete the entire year's
+couchdb database (for example, "carb/grid/state4k/hpms/2015").
+
+
+
 
 Run the precaching program
 --------------------------

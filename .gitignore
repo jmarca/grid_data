@@ -14,3 +14,5 @@ config.json
 man
 log
 /data/*RData
+.Rlibs
+stash

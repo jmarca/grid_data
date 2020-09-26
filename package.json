@@ -29,7 +29,7 @@
     "topojson": ""
   },
   "devDependencies": {
-    "eslint": "^2.10.2",
+    "eslint": "^7.5.0",
     "ink-docstrap": "^1.1.4",
     "istanbul": "^0.4.2",
     "jsdoc": "^3.4.0",
